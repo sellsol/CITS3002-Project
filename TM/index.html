@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Sample Questions</title>
+
+    <!-- Styling -->
+    <style>
+      body {
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      p {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      form {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+      }
+      
+      label {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      input[type="text"] {
+        padding: 0.5rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        margin-bottom: 1rem;
+      }
+      
+      input[type="submit"] {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: #0077cc;
+        color: #fff;
+        cursor: pointer;
+      }
+      
+      button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: #0077cc;
+        color: #fff;
+        cursor: pointer;
+        margin-right: 1rem;
+      }
+      
+      button:last-of-type {
+        margin-right: 0;
+      }
+      
+      button:hover, input[type="submit"]:hover {
+        background-color: #005fa3;
+      }
+
+      #button-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+        
+      button#back {
+        margin-right: 10px;
+      }
+      
+      
+    </style>
+  </head>
+  <body>
+    <!-- Page elements -->
+    <h1>Sample Questions</h1>
+    <h2 id="question-number"></h2>
+    <p id="question"></p>
+    <form id="answer-form">
+      <label for="answer">Answer:</label>
+      <input type="text" id="answer" name="answer"><br><br>
+      <input type="submit" value="Submit">
+    </form>
+    <br>
+    <div id="button-container">
+      <button id="back" onclick="previousQuestion()">Back</button>
+      <button id="next" onclick="nextQuestion()">Next</button>
+    </div>
+
+    <script>
+      // Javascript 
+      var currentQuestion = 0;
+      var questions = JSON.parse('{{questions}}');
+
+      // Adds things to screen
+      function displayQuestion() {
+        document.getElementById("question-number").innerHTML = currentQuestion + 1;
+        document.getElementById("question").innerHTML = questions[currentQuestion];
+        document.getElementById("answer").value = "";
+      }
+
+      //  Sends answer from form to python
+      function submitAnswer() {
+        var answer = document.getElementById("answer").value;
+        console.log("Answer: " + answer);
+
+        // make an HTTP POST request to the Python server with the form data
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/submit-answer", true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send(encodeURIComponent(answer) + ":" + currentQuestion);
+      }
+
+      // Change to previous question
+      function previousQuestion() {
+        if (currentQuestion > 0) {
+          currentQuestion--;
+          displayQuestion();
+        }
+      }
+
+      // Change to next question
+      function nextQuestion() {
+        if (currentQuestion < questions.length - 1) {
+          currentQuestion++;
+          displayQuestion();
+        }
+      }
+
+      displayQuestion();
+
+      // Submit the form data when the form is submitted
+      document.getElementById("answer-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        submitAnswer();
+      });
+    </script>
+  </body>
+</html>
