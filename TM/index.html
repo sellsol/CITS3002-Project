@@ -18,16 +18,13 @@
       h1 {
         font-size: 2rem;
         margin-bottom: 1rem;
+        text-align: center;
       }
 
       h2 {
+        display: inline-block;
         font-size: 1.5rem;
         margin-bottom: 0.5rem;
-      }
-
-      p {
-        font-size: 1rem;
-        margin-bottom: 1rem;
       }
 
       form {
@@ -48,6 +45,20 @@
         border-radius: 0.5rem;
         border: none;
         margin-bottom: 1rem;
+      }
+
+      #answer {
+        display: block;
+        width: 500px;
+        height: auto;
+        resize: vertical;
+        padding: 0.5rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        margin-bottom: 1rem;
+        resize: none;
+        overflow: hidden;
       }
 
       input[type="submit"] {
@@ -108,10 +119,11 @@
     <div id="question-screen" style="display: none">
       <h1>Sample Questions</h1>
       <h2 id="question-number"></h2>
-      <p id="question"></p>
+      <h2 id="question"></h2>
       <form id="answer-form">
         <label for="answer">Answer:</label>
-        <input type="text" id="answer" name="answer" /><br /><br />
+        <textarea id="answer" name="answer"></textarea>
+        <br /><br />
         <input type="submit" value="Submit" />
       </form>
       <br />
@@ -166,6 +178,14 @@
         }
       }
 
+      // Resize answer box
+      const answer = document.getElementById("answer");
+      answer.addEventListener("input", () => {
+        answer.style.height = "auto"; /* reset the height */
+        answer.style.height =
+          answer.scrollHeight + "px"; /* adjust the height to fit the content */
+      });
+
       displayQuestion();
 
       // Submit the form data when the form is submitted
@@ -176,42 +196,41 @@
           submitAnswer();
         });
 
-  // Submits login form
-  function submitLoginForm() {
-    var username = document.getElementById("username").value;
-    var password = document.getElementById("password").value;
+      // Submits login form
+      function submitLoginForm() {
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
 
-    // make an AJAX call to authenticate the user's credentials
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/login", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-        var response = JSON.parse(xhr.responseText);
-        console.log(response);
-        if (response.success) {
-          // authentication succeeded, display the question screen
-          questions = response.questions;
-          console.log(questions);
-          displayQuestion();
+        // make an AJAX call to authenticate the user's credentials
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            console.log(response);
+            if (response.success) {
+              // authentication succeeded, display the question screen
+              questions = response.questions;
+              console.log(questions);
+              displayQuestion();
 
-          document.getElementById("login-screen").style.display = "none";
-          document.getElementById("question-screen").style.display =
-            "block";
-        } else {
-          // authentication failed, display an error message
-          alert("Invalid username or password.");
-        }
+              document.getElementById("login-screen").style.display = "none";
+              document.getElementById("question-screen").style.display =
+                "block";
+            } else {
+              // authentication failed, display an error message
+              alert("Invalid username or password.");
+            }
+          }
+        };
+        var data = {
+          username: username,
+          password: password,
+        };
+        console.log(data);
+        xhr.send(JSON.stringify(data));
       }
-    };
-    var data = {
-      username: username,
-      password: password,
-    };
-    console.log(data);
-    xhr.send(JSON.stringify(data));
-  }
-
 
       // Listens for submitting form
       document

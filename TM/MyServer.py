@@ -31,7 +31,7 @@ class MyServer(BaseHTTPRequestHandler):
             # TODO: Check if login information is valid
             # Placeholder function for now            
             # Check credentials
-            if check_credentials(username, password):
+            if validate_student(username, password):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
@@ -67,7 +67,7 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-def check_credentials(username, password):
+def validate_student(username, password):
     # TODO: Implement a function to check if username and password are valid
     # For now, we'll just return True
     return True
@@ -91,7 +91,7 @@ def get_questions(username):
             "What is the smallest country in the world?",
             "What is the fastest land animal in the world?"
         ]
-    return questions, answers
+    return questions
 
 
 if __name__ == "__main__":
