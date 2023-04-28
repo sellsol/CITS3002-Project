@@ -1,4 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import unquote
 import json
 
 hostName = "localhost"
@@ -11,19 +12,9 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
-            
-            #TODO: Call function to get questions
-            questions = [
-                "What is your name?",
-                "What is your favorite color?",
-                "What is your favorite food?",
-                "What is your favorite hobby?"
-            ]
-            questions_json = json.dumps(questions)
                         
             with open("index.html", "r") as f:
                 html = f.read()
-                html = html.replace("{{questions}}", questions_json)
                 self.wfile.write(bytes(html, "utf-8"))
         else:
             self.send_response(404)
@@ -31,21 +22,77 @@ class MyServer(BaseHTTPRequestHandler):
 
     # Accepts data from page
     def do_POST(self):
-        if self.path == "/submit-answer":
+        if self.path == "/login":
+            content_length = int(self.headers["Content-Length"])
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
+            username = data["username"]
+            password = data["password"]
+            
+            if validate_student(username, password):
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+
+                # Get questions
+                questions = get_questions(username)
+                print(questions)
+                #questions_json = json.dumps(questions)
+                
+                # Send success and questions data
+                response = {"success": True, "questions": questions}
+                self.wfile.write(json.dumps(response).encode("utf-8"))
+            else:
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False}).encode("utf-8"))
+                
+        elif self.path == "/submit-answer":
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             data = body.decode("utf-8")
             answer, pos = data.split(":")
+            answer = unquote(answer)
             
-            #TODO: Do something with this data
+            # TODO: Do something with this data
             print("Answer: " + answer)
             print("Question Number: " + pos)
+            
             self.send_response(200)
             self.end_headers()
             self.wfile.write(bytes("Answer received: " + answer, "utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
+
+
+# !!!PLACEHOLDER FUNCTION
+def validate_student(username, password):
+    return True
+
+# !!!PLACEHOLDER FUNCTION
+def get_questions(username):
+    if (username == "username1"):
+        questions = [
+            "What is the capital of France?",
+            "What is the largest country in the world?",
+            "What is the highest mountain in the world?"
+        ]
+    elif (username == "username2"):
+        questions = [
+            "What is the currency of Japan?",
+            "What is the largest desert in the world?",
+            "What is the deepest ocean in the world?"
+        ]
+    else:
+        questions = [
+            "What is the capital of Canada?",
+            "What is the smallest country in the world?",
+            "What is the fastest land animal in the world?"
+        ]
+    return questions
+
 
 if __name__ == "__main__":
     # Makes a server object
