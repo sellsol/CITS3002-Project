@@ -1,4 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import unquote
 import json
 
 hostName = "localhost"
@@ -28,9 +29,6 @@ class MyServer(BaseHTTPRequestHandler):
             username = data["username"]
             password = data["password"]
             
-            # TODO: Check if login information is valid
-            # Placeholder function for now            
-            # Check credentials
             if validate_student(username, password):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
@@ -55,6 +53,7 @@ class MyServer(BaseHTTPRequestHandler):
             body = self.rfile.read(content_length)
             data = body.decode("utf-8")
             answer, pos = data.split(":")
+            answer = unquote(answer)
             
             # TODO: Do something with this data
             print("Answer: " + answer)
@@ -67,11 +66,12 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
+
+# !!!PLACEHOLDER FUNCTION
 def validate_student(username, password):
-    # TODO: Implement a function to check if username and password are valid
-    # For now, we'll just return True
     return True
 
+# !!!PLACEHOLDER FUNCTION
 def get_questions(username):
     if (username == "username1"):
         questions = [
