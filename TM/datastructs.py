@@ -1,8 +1,10 @@
 import fileinput
 import sys
 
-DB_filepath = "test_TM_database.txt"
+# globals (should we have a file for this?)
 num_questions = 3
+DB_filepath = "test_TM_database_v2.txt"
+QB_portnums = [1401,2002] # ignore what this means for now TBC
 
 # class for our database of student answers info
 class TM_student:
@@ -10,226 +12,200 @@ class TM_student:
         self.username = username        
         self.current_finished = 0
         self.current_marks = 0
+        
         self.questions = []
+        self.types = []
+        self.choices = []
+        self.attempts = []
+        self.marks = []
         
-    # checks if a student is already in the TM_database
-    def is_new_student(self):
-        TM_database = open(DB_filepath, "r")
-        
-        for line in TM_database:
-            line_username = line.split(",")[0]
-            if line_username == self.username:
-                return False
-            
-            for _ in range(num_questions - 1):
-                next(TM_database)
-                
-        TM_database.close()
-        return True         
-        
-    # reads current answers and their question info for this student from the TM_database
-    def read_answers(self):
-        if self.is_new_student():            
-            # get info for random sequence of questions and initialise each question                
-            questions_info = QB_get_questions_new()
-            for q_info in questions_info:
-                question = TM_question(q_info[0])
-                question.question = q_info[1]
-                question.num_choices = q_info[2]
-                question.choices = q_info[3:]
-                self.questions.append(question)
-            
-        else:
-            TM_database = open(DB_filepath, "r")
-            line_answer = TM_database.readline().strip().split(",", 4)
-            
-            # skips through the file until a matching username is found
-            while line_answer[0] != self.username:
-                line_answer = TM_database.readline().strip().split(",", 4)
+    # gets questions info for this student from the QBs
+    def get_questions(self):
+        seed = self.username
+        for QB in range(len(QB_portnums)):
+            start, end = indexes_in_qb(QB)
+            line_questions = QB_get_questions(QB_portnums[QB], end - start + 1, seed).split("\;")
+            self.questions.extend(line_questions[0].split("\,"))
+            self.types.extend(list(map(int, line_questions[1].split(","))))
+            self.choices.extend([choice.split("\:") for choice in line_questions[2].split("\,")])
 
-            # gets the succeeding lines in the file (same student) and read into student answers
-            question_ids = []
-            for _ in range(num_questions):
-                # store data on student answers
-                question_ids.append(line_answer[1])
-                question = TM_question(line_answer[1])
-                question.attempts = int(line_answer[2])
-                question.marks = int(line_answer[3])
-                
-                # if student already has 3 incorrect attempts, read in the student's last output and update progress
-                if (question.is_finished_incorrect()):
-                    question.student_output = line_answer[4]
-                    question.sample_output = "Placeholder sample output" # TO REPLACE - get sample output from QB
-                    self.current_finished += 1
-                # if student already answered the question correctly, update progress
-                if (question.marks > 0):
-                    self.current_finished += 1
-                    self.current_marks += question.marks
-                
-                self.questions.append(question)
-                line_answer = TM_database.readline().strip().split(",", 4)
-            
+    # reads current answers info for this student from the TM_database
+    def get_answers(self):
+        try:
+            # gets answers from DM if student already exists there
+            found = False
+            TM_database = open(DB_filepath, "r")
+            for line in TM_database:
+                line_answers = line.split(";")
+                if line_answers[0] == self.username:
+                    self.attempts = list(map(int, line_answers[1].split(",")))
+                    self.marks = list(map(int, line_answers[2].split(",")))
+                    found = True
+                    break
             TM_database.close()
-            
-            # get info corresponding to the question ids and store into questions array
-            questions_info = QB_get_questions(question_ids)
-            for i in range(num_questions):
-                q_info = questions_info[i]
-                question = self.questions[i]
-                question.question = q_info[1]
-                question.num_choices = q_info[2]
-                question.choices = q_info[3:]
+            # if student not yet in DB initialise to new test and record in DB
+            if not found:
+                self.attempts = [0] * num_questions
+                self.marks = [0] * num_questions
+                self.init_answers()
+                
+            # get progress numbers
+            self.current_marks = sum(self.marks)
+            for answer in range(num_questions):
+                if self.is_finished(answer):
+                    self.current_finished += 1
+        except FileNotFoundError as err:
+            # error handling for if the file could not be found
+            print("Error: TM database '" + DB_filepath + "' could not be found.")
+            raise err        
+    
+    
+    # checks if a question at a certain page index is already finished
+    def is_finished(self, answer_index):
+        if self.attempts[answer_index] == 3 and self.marks[answer_index] == 0:
+            return True
+        elif self.marks[answer_index] > 0:
+            return True
+        else:
+            return False
+        
             
     # checks the given answers to a question and updates progress
     def check_answer(self, question_index, student_answer):
-        if self.questions[question_index].attempts == 2:
-            is_last_attempt = True
-        else:
-            is_last_attempt = False
+        # calls the relevant QB and asks to check
+        is_last_attempt = self.attempts[question_index] == 2
+        portnum, q_index = q_to_qb(question_index)
             
-        result = QB_check_question(self.questions[question_index].question_id, student_answer, is_last_attempt)
+        result = QB_check_question(portnum, q_index, student_answer, is_last_attempt)
  
+        # update depending on if correct or not
         if result[0]:
-            self.questions[question_index].correct_attempt()
+            self.marks[question_index] += 3 - self.attempts[question_index]
+            self.attempts[question_index] += 1
+            self.current_marks += self.marks[question_index]
             self.current_finished += 1
-            self.current_marks += self.questions[question_index].marks
         else:
-            self.questions[question_index].incorrect_attempt(result[1], result[2])
+            self.attempts[question_index] += 1
             if is_last_attempt:
                 self.current_finished += 1
     
-    # writes current answers for this student to the TM_database
-    def write_answers(self):
-        if self.is_new_student():
+    # creates new student entry in the TM_database
+    def init_answers(self):
+        try:
             TM_database = open(DB_filepath, "a")
-            for i in range(num_questions):
-                question = self.questions[i]
-                TM_database.write("\n" + self.username + "," + str(question.question_id) 
-                    + "," + str(question.attempts) + "," + str(question.marks))
-                if question.is_finished_incorrect():
-                    TM_database.write(question.student_output)
+            TM_database.write(
+                self.username + ";"
+                + ",".join(list(map(str, self.attempts))) 
+                + ";" + ",".join(list(map(str, self.marks))) + "\n"
+            )
             TM_database.close()
-        else:
-            i = 0
-            for line in fileinput.input(DB_filepath, inplace=1):
-                # skips through the file until a matching username is found
-                if line.split(",")[0] == self.username:
-                    # if third incorrect attempt, also write student output
-                    question = self.questions[i]
-                    if question.is_finished_incorrect():
-                        line = line.replace(line, self.username + "," + str(question.question_id)
-                            + "," + str(question.attempts) + "," + str(question.marks) 
-                            + "," + str(question.student_output) + "\n")
-                        i += 1
-                    else:
-                        line = line.replace(line, self.username + "," + str(question.question_id)
-                            + "," + str(question.attempts) + "," + str(question.marks) + "\n")
-                        i += 1
+        except FileNotFoundError as err:
+            # error handling for if the file could not be found
+            print("Error: TM database '" + DB_filepath + "' could not be found.")
+            raise err   
+    
+    # updates answers for this student in the TM_database
+    def update_answers(self):
+        try:
+            # find relevant entry and replace it with current counts
+            for line in fileinput.FileInput(DB_filepath, inplace=1):
+                if line.split(";")[0] == self.username:
+                    line = line.replace(line, self.username + ";"
+                        + ",".join(list(map(str, self.attempts))) 
+                        + ";" + ",".join(list(map(str, self.marks))) + "\n")
                 sys.stdout.write(line)
-        
-                
-class TM_question:
-    def __init__(self, id):
-        self.question_id = id
-        self.question = None
-        self.num_choices = 0
-        self.choices = []
-        
-        self.attempts = 0
-        self.marks = 0
-        self.student_output = None
-        self.sample_output = "placeholder sample output" # placeholder - not dealt with yet
-        
-    def correct_attempt(self):
-        self.marks += 3 - self.attempts
-        self.attempts += 1
-    
-    def incorrect_attempt(self, student_output, sample_output):
-        self.attempts += 1
-        if self.attempts == 3:
-            self.student_output = student_output
-            self.sample_output = sample_output  
-    
-    def is_finished_correct(self):
-        return self.marks > 0
-    
-    def is_finished_incorrect(self):
-        return self.marks == 0 and self.attempts == 3
-            
+        except FileNotFoundError as err:
+            # error handling for if the file could not be found
+            print("Error: TM database '" + DB_filepath + "' could not be found.")
+            raise err                   
+
+
+# gets the start and end indexes of questions that were taken from a qb
+def indexes_in_qb(i):
+    low = i * num_questions // len(QB_portnums)
+    high = (i + 1) * num_questions // len(QB_portnums)
+    return range(num_questions)[low:high][0],  range(num_questions)[low:high][-1]
+
+# gets the qb that a given question index was taken from
+def q_to_qb(q):
+    for i in range(len(QB_portnums)):
+        start, end = indexes_in_qb(i)
+        if q >= start and q <=end:
+            return i, q - start
+    return
             
 
-# PLACEHOLDER func that gets a random sequence of questions and their info for a new student
-def QB_get_questions_new():
-    # return in 2d lists of id, question string, num choices, <multiple choices if applicable>
-    questions = [
-        [3, "Write a hello world program in C.", -1],
-        [2, "What is Chris' favourite colour?", 4, "red", "green", "blue", "black"],
-        [6, "Which is not a network layer routing algorithm?", 4, "flooding", "leaky bucket", "link state", "distance vector"]
-    ]
+# PLACEHOLDER func that gets a random sequence of questions and their info
+def QB_get_questions(portnum, num_qs, seed):
+    # return as a string of lists
+    # of questions, types, choices
+    if (portnum == 1401):
+        questions = (
+            "Write a hello world program in C.\;"
+            "0\;"
+            ""
+        )
+    else: #portnum is just the other one, 2002 (for now)
+        questions = (
+            "What is Chris' favourite colour?\,Which is not a network layer routing algorithm?\;"
+            "1,1\;"
+            "red\:green\:blue\:black\:yellow\,flooding\:leaky bucket\:link state\:distance vector"
+        )
     return questions
 
 
-# PLACEHOLDER func that gets info for a given sequence of questions 
-def QB_get_questions(question_ids):
-    # same format as no parameters counterpart -  getting question ids doesn't mean much here though
-    questions = [
-        [question_ids[0], "What is Chris' favourite colour?", 4, "red", "green", "blue", "black"],
-        [question_ids[1], "Write a hello world program in C.", -1],
-        [question_ids[2], "Which is not a network layer routing algorithm?", 4, "flooding", "leaky bucket", "link state", "distance vector"]
-    ]
-    return questions
-
-# PLACEHOLDER func that checks an answer with the QB
-def QB_check_question(question_id, student_answer, is_last_attempt):
+# PLACEHOLDER func that checks an answer with a QB
+def QB_check_question(portnum, q_index, is_last_attempt, student_answer):    
     if is_last_attempt:
         # return in form is_correct, student_output, sample_output
         return False, student_answer, "placeholder checked_output"
     else:
-        return False, None, None
+        return False
 
 # TEMPORARY test func to print all the info in a TM_student object
 def TEST_student_info(student):
+    # general info
     print("username: " + student.username)
     print("current finished: " + str(student.current_finished) + "/" + str(num_questions))
     print("current_marks: " + str(student.current_marks) + "/" + str(num_questions * 3))
     print()
-    for page_index in range(num_questions):
-        question = student.questions[page_index]
-        
-        print("question id: " + str(question.question_id))        
-        print("question: " + question.question)
-        if question.num_choices == -1:
+    
+    # for each page
+    for page_index in range(num_questions):        
+        print("question " + str(page_index + 1) + ": " + student.questions[page_index])
+        if student.types[page_index] == 0:
             print("\t[enter your code here]")
         else:
-            for i in range (question.num_choices):
-                print("\t" + str(i + 1) + ". " + question.choices[i])
+            i = 1
+            for choice in student.choices[page_index]:
+                print("\t" + str(i) + ". " + choice)
+                i += 1
+                
+        if student.is_finished(page_index):
+            print("\t[question is finished, no more submissions]")
         
-        print("attempts: " + str(question.attempts))
-        print("marks: " + str(question.marks))
-        
-        if question.is_finished_incorrect():
-            print("\t3rd incorrect output: " + str(question.student_output))
-            print("\tsample output: " + str(question.sample_output))
+        print("attempts: " + str(student.attempts[page_index]))
+        print("marks: " + str(student.marks[page_index]))
         
         print()
 
 # TEMPORARY main func for testing
 def main(input_username):
-    # normally authentication here first to get username
+    # login sequence
+    #normally authentication here first to get username
     student = TM_student(input_username)
-    student.read_answers()
+    student.get_questions()
+    student.get_answers()
     
-    # display
+    # test display
     TEST_student_info(student)
     
     # entering answers
     student.check_answer(2, 3)
+    student.update_answers()
     
-    # display
+    # test display again
     TEST_student_info(student)
-    
-    # logout writing
-    student.write_answers()
 
 import sys
 if __name__ == "__main__":
