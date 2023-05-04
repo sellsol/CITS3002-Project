@@ -1,0 +1,6 @@
+2,c,Write a program to print 1+1 in c,stdout(2)
+4,m,What is 1+1?,4,1,2,3,4
+6,m,What is size of int on a 32 bit device?,4,10,8,4,1
+8,m,Which is the wrong way to initialise a string with 8 characters?,3,char s[8]="a string",char s[]="a string",const char* s = "a string"
+10,m,C is suitable for low-level implementations.,2,True,False
+12,m,How are strings represented in C?,4,string,ints,ascii,array of chars
