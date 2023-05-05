@@ -10,8 +10,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <programmingq.c>
-
 //sendAll Shamelessly stolen from beej's guide to networking
 int sendAll(int s, char *buf, int *len) {
 	int total = 0;
@@ -65,7 +63,7 @@ int main(void) {
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	if ((status = getaddrinfo("127.0.0.1", "65432", &hints, &res)) != 0) {
+	if ((status = getaddrinfo("10.135.190.244", "65432", &hints, &res)) != 0) {
 		fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
 		exit(1);
 	}

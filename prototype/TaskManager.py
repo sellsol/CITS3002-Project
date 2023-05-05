@@ -4,7 +4,7 @@ import selectors
 
 sel = selectors.DefaultSelector()
 
-HOST = "127.0.0.1"
+HOST = "10.135.190.244"
 PORT = 65432
 
 print(f"Hosting on {HOST}, port {PORT}");
