@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sample Questions</title>
+
+    <!-- Styling -->
+    <style>
+      body {
+        background-color: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      h2 {
+        display: inline-block;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+      }
+
+      label {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      input[type="password"],
+      input[type="text"] {
+        padding: 0.5rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        margin-bottom: 1rem;
+      }
+
+      #answer {
+        display: block;
+        width: 500px;
+        height: auto;
+        resize: vertical;
+        padding: 0.5rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        margin-bottom: 1rem;
+        resize: none;
+        overflow: hidden;
+      }
+
+      input[type="submit"] {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: #0077cc;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: #0077cc;
+        color: #fff;
+        cursor: pointer;
+        margin-right: 1rem;
+      }
+
+      button:last-of-type {
+        margin-right: 0;
+      }
+
+      button:hover,
+      input[type="submit"]:hover {
+        background-color: #005fa3;
+      }
+
+      #button-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      button#back {
+        margin-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Login Page -->
+    <div id="login-screen">
+      <h1>Login</h1>
+      <form id="login-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" /><br /><br />
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" /><br /><br />
+        <input type="submit" value="Login" />
+      </form>
+    </div>
+
+    <!-- Questions Page -->
+    <div id="question-screen" style="display: none">
+      <h1>Sample Questions</h1>
+      <h2 id="question-number"></h2>
+      <h2 id="question"></h2>
+      <form id="answer-form">
+        <label for="answer">Answer:</label>
+        <textarea id="answer" name="answer"></textarea>
+        <br /><br />
+        <input type="submit" value="Submit" />
+      </form>
+      <br />
+      <div id="button-container">
+        <button id="back" onclick="previousQuestion()">Back</button>
+        <button id="next" onclick="nextQuestion()">Next</button>
+      </div>
+    </div>
+
+    <script>
+      // Javascript
+      var currentQuestion = 0;
+      var questions = [""];
+
+      // Adds things to screen
+      function displayQuestion() {
+        document.getElementById("question-number").innerHTML =
+          currentQuestion + 1;
+        document.getElementById("question").innerHTML =
+          questions[currentQuestion];
+        document.getElementById("answer").value = "";
+      }
+
+      //  Sends answer from form to python
+      function submitAnswer() {
+        var answer = document.getElementById("answer").value;
+        console.log("Answer: " + answer);
+
+        // make an HTTP POST request to the Python server with the form data
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/submit-answer", true);
+        xhr.setRequestHeader(
+          "Content-Type",
+          "application/x-www-form-urlencoded"
+        );
+        xhr.send(encodeURIComponent(answer) + ":" + currentQuestion);
+      }
+
+      // Change to previous question
+      function previousQuestion() {
+        if (currentQuestion > 0) {
+          currentQuestion--;
+          displayQuestion();
+        }
+      }
+
+      // Change to next question
+      function nextQuestion() {
+        if (currentQuestion < questions.length - 1) {
+          currentQuestion++;
+          displayQuestion();
+        }
+      }
+
+      // Resize answer box
+      const answer = document.getElementById("answer");
+      answer.addEventListener("input", () => {
+        answer.style.height = "auto"; /* reset the height */
+        answer.style.height =
+          answer.scrollHeight + "px"; /* adjust the height to fit the content */
+      });
+
+      displayQuestion();
+
+      // Submit the form data when the form is submitted
+      document
+        .getElementById("answer-form")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          submitAnswer();
+        });
+
+      // Submits login form
+      function submitLoginForm() {
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
+
+        // make an AJAX call to authenticate the user's credentials
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            console.log(response);
+            if (response.success) {
+              // authentication succeeded, display the question screen
+              questions = response.questions;
+              console.log(questions);
+              displayQuestion();
+
+              document.getElementById("login-screen").style.display = "none";
+              document.getElementById("question-screen").style.display =
+                "block";
+            } else {
+              // authentication failed, display an error message
+              alert("Invalid username or password.");
+            }
+          }
+        };
+        var data = {
+          username: username,
+          password: password,
+        };
+        console.log(data);
+        xhr.send(JSON.stringify(data));
+      }
+
+      // Listens for submitting form
+      document
+        .getElementById("login-form")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          submitLoginForm();
+        });
+    </script>
+  </body>
+</html>

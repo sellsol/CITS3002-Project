@@ -1,0 +1,2 @@
+Write a C99 program that takes in one and only one command line argument.
+The program should output "TOO LARGE" if the command line argument is greater than length 10, and "GREAT" otherwise.
