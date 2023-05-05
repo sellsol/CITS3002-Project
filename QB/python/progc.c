@@ -7,8 +7,6 @@
 #include <wait.h>
 #include <sys/stat.h>
 
-
-
 //TODO: Fix perror messages? They're kind of bland right now.
 
 char* readTextFile(char *path) {
@@ -154,8 +152,4 @@ int compileCode(char* code, char* questionId) {
 			unlink(execPath);
 			return 0;
 	}
-}
-
-int main(void) {
-	printf("%i\n", compileCode("#include<stdio.h>\n\nint main(void) {\n\tint a = 1;\n\tprintf(\"1\\n1\\n2\\n3\\n5\\n8\\n13\\n21\\n34\\n55\");\n}", "1"));
 }
