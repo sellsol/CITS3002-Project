@@ -5,15 +5,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wait.h>
+#include <sys/stat.h>
+
+
 
 //TODO: Fix perror messages? They're kind of bland right now.
 
-char* readTextFile(char *path1, char *path2, int len) {
-	char *output = malloc(len);
+char* readTextFile(char *path) {
+	struct stat *buf = malloc(sizeof(struct stat));
+	stat(path, buf); //Need to error handle
+	int size = buf->st_size;
 
-	strcpy();
+	char *out = malloc(size); //Need to really make sure this works
+	int oFd = open(path, O_RDONLY);
+	int got = read(oFd, out, size);
+	while (got < size) {
+		got += read(oFd, out + got, size - got);
+	}
 
-	return output;
+	out[got - 1] = '\0';
+
+	return out;
 }
 
 //Returns 1 on failed, 0 on success. Returning error messages is also possible, just return char*
@@ -41,7 +53,7 @@ int testCode(char *path, char *indicator, char *in, char *expectedOut) {
 		default:
 			close(thepipe[1]); //Will never write
 			
-			//Initialie variables
+			//Initialise variables
 			int expectedLen = strlen(expectedOut) + 1;
 			char* output = malloc(expectedLen);
 
@@ -52,7 +64,7 @@ int testCode(char *path, char *indicator, char *in, char *expectedOut) {
 				pos += got;
 				got = read(thepipe[0], output + pos, expectedLen - pos);
 			}
-
+			
 			//We got more input than we were expecting, return failure
 			if (pos > expectedLen) {
 				return 1;
@@ -71,16 +83,18 @@ int testCode(char *path, char *indicator, char *in, char *expectedOut) {
 
 //Returns 1 if any of the tests fail, 0 otherwise. See testCode for my comments on this
 int compileCode(char* code) {
-	//int fd = creat("./code/hey.c", S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	//write(fd, code, strlen(code)); //Need to do error handling here
-
-	//close(fd);
+	char codePath[20];
+	strcpy(codePath, "./code/XXXXXX.c");
+	int pFd = mkstemps(codePath, 2);
+	write(pFd, code, strlen(code));
+	close(pFd); //Should unlink all codepaths at the end
+	char *execPath = strndup(codePath, strlen("./code/XXXXXX"));
 
 	switch (fork()) {
 		case -1:
 			//Halt and catch fire
 		case 0: //Child process - execv
-			execl("/usr/bin/gcc", "gcc", "./code/hey.c", "-o", "./code/a", (char *) NULL);
+			execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
 			printf("UH OH STINKY GCC ERROR\n");
 			exit(EXIT_FAILURE);
 		default: //Parent process - run
@@ -94,33 +108,49 @@ int compileCode(char* code) {
 				if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
 				printf("%s\n", dir->d_name);
 
-				char *inPath = malloc(strlen("./progq/q1/tests/") + strlen(dir->d_name) + strlen("/in"));
-				char *outPath = malloc(strlen("./progq/q1/tests/") + strlen(dir->d_name) + strlen("/out"));
+				char *inPath = calloc(strlen("./progq/q1/tests/") + strlen(dir->d_name) + strlen("/in"), sizeof(char));
+				char *outPath = calloc(strlen("./progq/q1/tests/") + strlen(dir->d_name) + strlen("/out"), sizeof(char));
 				//optimise
 
 				//string concatenate path names
+				strcat(inPath, "./progq/q1/tests/");
+				strcat(inPath, dir->d_name);
+				strcat(inPath, "/in");
 
+				strcat(outPath, "./progq/q1/tests/");
+				strcat(outPath, dir->d_name);
+				strcat(outPath, "/out");
+
+				char *in = NULL;
+				if (access(inPath, F_OK) == 0) {
+					in = readTextFile(inPath);
+				}
+				char *out = readTextFile(outPath);
 				//assess if input/output files exist, else equals nullpointer
-
-				//use stat to read all data, pass to ret
-
-				//wrap this in a function
-
-				int ret = testCode("./code/a", "a", );
 
 				free(inPath);
 				free(outPath);
+
+				int ret = testCode(execPath, execPath + strlen("./code/"), in, out);
 				
+				free(in);	
+				free(out);
+
 				if (ret == 1) {
+					closedir(d);
+					unlink(codePath);
+					unlink(execPath);
 					return ret;
 				}
 			}
 
 			closedir(d);
+			unlink(codePath);
+			unlink(execPath);
 			return 0;
 	}
 }
 
 int main(void) {
-	printf("%i\n", compileCode(NULL));
+	printf("%i\n", compileCode("#include<stdio.h>\n\nint main(void) {\n\tint a = 1;\n\tprintf(\"1\\n1\\n2\\n3\\n5\\n8\\n13\\n21\\n34\\n55\");\n}"));
 }

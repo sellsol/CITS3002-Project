@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <programmingq.c>
+
 //sendAll Shamelessly stolen from beej's guide to networking
 int sendAll(int s, char *buf, int *len) {
 	int total = 0;
