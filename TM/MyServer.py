@@ -5,9 +5,9 @@ from authentication import *
 from datastructs import *
 
 hostName = "localhost"
-serverPort = 8080
+serverPort = 8000
 
-class MyServer(BaseHTTPRequestHandler):
+class MyServer(BaseHTTPRequestHandler):            
     # Builds the html page
     def do_GET(self):
         if self.path == "/":
@@ -18,6 +18,8 @@ class MyServer(BaseHTTPRequestHandler):
             with open("index.html", "r") as f:
                 html = f.read()
                 self.wfile.write(bytes(html, "utf-8"))
+        #elif self.path == "/answers":
+            #TODO: send response from tm
         else:
             self.send_response(404)
             self.end_headers()
@@ -42,7 +44,9 @@ class MyServer(BaseHTTPRequestHandler):
                 #questions_json = json.dumps(questions)
                 
                 # Send success and questions data
-                response = {"success": True, "questions": student.questions, "types": student.types, "choices": student.choices}
+                response = {"success": True, "questions": student.questions, "types": student.types, 
+                            "choices": student.choices, "current_finished": student.current_finished, 
+                            "current_marks": student.current_marks, "attempts": student.attempts, "marks": student.marks}
                 self.wfile.write(json.dumps(response).encode("utf-8"))
             else:
                 self.send_response(200)
@@ -54,7 +58,7 @@ class MyServer(BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             data = body.decode("utf-8")
-            answer, pos = data.split(":")
+            answer, pos, attempts = data.split(":")
             answer = unquote(answer)
             
             # TODO: Do something with this data
@@ -63,11 +67,15 @@ class MyServer(BaseHTTPRequestHandler):
             
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(bytes("Answer received: " + answer, "utf-8"))
+            
+            response = {"success": True, "correct": check_answer(pos, answer, attempts)} 
+            self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
 
+def check_answer(pos, answer, attempts):
+    return True
 
 if __name__ == "__main__":
     # Makes a server object

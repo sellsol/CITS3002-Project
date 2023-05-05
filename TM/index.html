@@ -91,7 +91,7 @@
         background-color: #005fa3;
       }
 
-      #button-container {
+      .horizontal-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -133,6 +133,36 @@
         background-color: #0077cc;
         border-color: #0077cc;
       }
+
+      .info-box {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        background-color: #0077cc;
+        color: #fff;
+      }
+      
+      .info-box p {
+        margin: 5px 0;
+        font-weight: bold;
+        font-size: 18px;
+      }
+      
+      #current-finished, #current-marks, #attempts, #marks {
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .left {
+        margin-left: 0;
+      }
+
+      .right {
+        margin-right: 0;
+      }
+      
       
     </style>
   </head>
@@ -151,7 +181,17 @@
 
     <!-- Questions Page -->
     <div id="question-screen" style="display: none">
-      <h1>Sample Questions</h1>
+      <div class="horizontal-container">
+        <div class="info-box left">
+          <p>Current Finished</p>
+          <p id="current-finished"></p>
+        </div>
+        <div class="info-box right">
+          <p>Current Marks</p>
+          <p id="current-marks"></p>
+        </div>
+      </div>
+      <h1 id="username-header"></h1>
       <h2 id="question-number"></h2>
       <h2>.</h2>
       <h2 id="question"></h2>
@@ -173,11 +213,20 @@
       </form>
 
       <br>
-      <div id="button-container">
+      <div class="horizontal-container">
         <button id="back" onclick="previousQuestion()">Back</button>
         <button id="next" onclick="nextQuestion()">Next</button>
       </div>
-
+      <div class="horizontal-container">
+        <div class="info-box left">
+          <p>Attempts</p>
+          <p id="attempts"></p>
+        </div>
+        <div class="info-box right">
+          <p>Marks</p>
+          <p id="marks"></p>
+        </div>
+      </div>
     </div>
 
 
@@ -190,11 +239,22 @@
       var questions = [""];
       var types = [""]; //type can be "c" for coding or "m" for multiple choice
       var choices = [""];
+      var username = "";
+      var current_finished = 0;
+      var current_marks = 0;
+      var attempts = [];
+      var marks = [];
 
       // Adds things to screen
       function displayQuestion() {
         document.getElementById("question-number").innerHTML = currentQuestion + 1;
         document.getElementById("question").innerHTML = questions[currentQuestion];
+        document.getElementById("username-header").innerHTML = username;
+        document.getElementById("current-finished").innerHTML = current_finished;
+        document.getElementById("current-marks").innerHTML = current_marks;
+        document.getElementById("attempts").innerHTML = attempts[currentQuestion];
+        document.getElementById("marks").innerHTML = marks[currentQuestion];
+        console.log(username);
         if (types[currentQuestion] == "c") {
           document.getElementById("multichoice-screen").style.display = "none";
           document.getElementById("coding-screen").style.display = "block";
@@ -226,6 +286,7 @@
 
       //  Sends answer from form to python
       function submitAnswer() {
+        if (attempts[currentQuestion] > 2 || marks[currentQuestion] != 0) return;
         var answer;
         if (types[currentQuestion] == "c") {
           answer = document.getElementById("answer").value;
@@ -243,11 +304,29 @@
         // make an HTTP POST request to the Python server with the form data
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/submit-answer", true);
-        xhr.setRequestHeader(
-          "Content-Type",
-          "application/x-www-form-urlencoded"
-        );
-        xhr.send(encodeURIComponent(answer) + ":" + currentQuestion);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+              var response = JSON.parse(xhr.responseText);
+              if (response.correct) {
+                correct();
+              }
+              else {
+                incorrect();
+              }
+              // Handle the response from the server here
+              displayQuestion();
+              console.log(xhr.responseText);
+            } else {
+              // Handle errors here
+              console.error(xhr.statusText);
+            }
+          }
+        };
+        
+        xhr.send(encodeURIComponent(answer) + ":" + currentQuestion + ":" + attempts[currentQuestion]);
+        
       }
 
       // Change to previous question
@@ -264,6 +343,18 @@
           currentQuestion++;
           displayQuestion();
         }
+      }
+
+      function correct() {
+        marks[currentQuestion] = 3 - attempts[currentQuestion];
+        attempts[currentQuestion] ++;
+        current_finished ++;
+        current_marks += marks[currentQuestion];
+      }
+
+      function incorrect() {
+        attempts[currentQuestion] ++;
+        if (attempts[currentQuestion] == 3) current_finished ++;
       }
 
       // Resize answer box
@@ -286,7 +377,7 @@
 
       // Submits login form
       function submitLoginForm() {
-        var username = document.getElementById("username").value;
+        username = document.getElementById("username").value;
         var password = document.getElementById("password").value;
 
         // make an AJAX call to authenticate the user's credentials
@@ -302,9 +393,18 @@
               questions = response.questions;
               types = response.types;
               choices = response.choices;
+              current_finished = response.current_finished;
+              current_marks = response.current_marks;
+              attempts = response.attempts;
+              marks = response.marks;
+
               console.log(questions);
               console.log(types);
               console.log(choices);
+              console.log(current_finished);
+              console.log(current_marks);
+              console.log(attempts);
+              console.log(marks);
               displayQuestion();
 
               document.getElementById("login-screen").style.display = "none";

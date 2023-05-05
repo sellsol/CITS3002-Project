@@ -72,6 +72,9 @@ class TM_student:
             
     # checks the given answers to a question and updates progress
     def check_answer(self, question_index, student_answer):
+        print(question_index)
+        print(student_answer)
+        print(self.attempts)
         # calls the relevant QB and asks to check
         is_last_attempt = self.attempts[question_index] == 2
         portnum, q_index = q_to_qb(question_index)
