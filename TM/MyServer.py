@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import unquote
 import json
+from authentication import *
 
 hostName = "localhost"
 serverPort = 8080
@@ -29,18 +30,18 @@ class MyServer(BaseHTTPRequestHandler):
             username = data["username"]
             password = data["password"]
             
-            if validate_student(username, password):
+            if validate_student("test_login_file.txt" ,username, password):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
 
                 # Get questions
-                questions = get_questions(username)
+                questions, types, mcqanswers = get_questions(username)
                 print(questions)
                 #questions_json = json.dumps(questions)
                 
                 # Send success and questions data
-                response = {"success": True, "questions": questions}
+                response = {"success": True, "questions": questions, "types": types, "mcqanswers": mcqanswers}
                 self.wfile.write(json.dumps(response).encode("utf-8"))
             else:
                 self.send_response(200)
@@ -68,16 +69,22 @@ class MyServer(BaseHTTPRequestHandler):
 
 
 # !!!PLACEHOLDER FUNCTION
-def validate_student(username, password):
-    return True
-
-# !!!PLACEHOLDER FUNCTION
 def get_questions(username):
     if (username == "username1"):
         questions = [
-            "What is the capital of France?",
-            "What is the largest country in the world?",
-            "What is the highest mountain in the world?"
+            "What is the capital of Canada?",
+            "What is the smallest country in the world?",
+            "What is the fastest land animal in the world?"
+        ]
+        types = [
+            "m",
+            "c",
+            "m"
+        ]
+        mcqanswer = [
+            ["Canada", "Germany", "Australia"],
+            [],
+            ["a", "b", "c"]
         ]
     elif (username == "username2"):
         questions = [
@@ -85,13 +92,33 @@ def get_questions(username):
             "What is the largest desert in the world?",
             "What is the deepest ocean in the world?"
         ]
+        types = [
+            "m",
+            "c",
+            "m"
+        ]
+        mcqanswer = [
+            ["Canada", "Germany", "Australia"],
+            [],
+            ["a", "b", "c"]
+        ]
     else:
         questions = [
-            "What is the capital of Canada?",
-            "What is the smallest country in the world?",
-            "What is the fastest land animal in the world?"
+            "What is the capital of France?",
+            "What is the largest country in the world?",
+            "What is the highest mountain in the world?"
         ]
-    return questions
+        types = [
+            "m",
+            "c",
+            "m"
+        ]
+        mcqanswer = [
+            ["Canada", "Germany", "Australia"],
+            [],
+            ["a", "b", "c"]
+        ]
+    return questions, types, mcqanswer
 
 
 if __name__ == "__main__":
