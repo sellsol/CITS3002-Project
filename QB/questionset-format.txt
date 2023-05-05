@@ -17,3 +17,7 @@ if(multichoice):
 answer-sets
 1. question id
 **need to implement tests for coding questions
+
+question bases
+1. QB1 is the python bases
+2. QB2 is the c bases

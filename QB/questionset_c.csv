@@ -1,6 +1,10 @@
-2,c,Write a program to print 1+1 in c,stdout(2)
-4,m,What is 1+1?,4,1,2,3,4
-6,m,What is size of int on a 32 bit device?,4,10,8,4,1
-8,m,Which is the wrong way to initialise a string with 8 characters?,3,char s[8]="a string",char s[]="a string",const char* s = "a string"
-10,m,C is suitable for low-level implementations.,2,True,False
-12,m,How are strings represented in C?,4,string,ints,ascii,array of chars
+1,c,Write a program to print 1+1 in c
+2,m,What is 1+1?,4,1,2,3,4
+3,m,What is size of int on a 32 bit device?,4,10,8,4,1
+4,m,Which is the wrong way to initialise a string with 8 characters?,3,char s[8]="a string",char s[]="a string",const char* s = "a string"
+5,m,C is suitable for low-level implementations.,2,True,False
+6,m,How are strings represented in C?,4,string,ints,ascii,array of chars
+7,m,What is the range of values that can be stored by the unsigned char data type?,4,-128 to 127,0 to 255,-256 to 255,0 to 127
+8,c,Write a function to concat 2 strings in c.
+9,m,The memory allocation for arrays in c is dynamically allocated.,2,True,False
+10,m,What does fopen() function return?.,3,a file pointer, an integer
