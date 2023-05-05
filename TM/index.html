@@ -189,7 +189,7 @@
       var currentQuestion = 0;
       var questions = [""];
       var types = [""]; //type can be "c" for coding or "m" for multiple choice
-      var mcqanswers = [""];
+      var choices = [""];
 
       // Adds things to screen
       function displayQuestion() {
@@ -210,13 +210,13 @@
             options.removeChild(options.firstChild);
           }
           
-          for (let i = 0; i < mcqanswers[currentQuestion].length; i++) {
+          for (let i = 0; i < choices[currentQuestion].length; i++) {
             const radio = document.createElement("input");
             radio.type = "radio";
             radio.name = "mcq";
             radio.value = i;
             const label = document.createElement("label");
-            label.textContent = mcqanswers[currentQuestion][i];
+            label.textContent = choices[currentQuestion][i];
             options.appendChild(radio);
             options.appendChild(label);
           }
@@ -301,10 +301,10 @@
               // authentication succeeded, display the question screen
               questions = response.questions;
               types = response.types;
-              mcqanswers = response.mcqanswers;
+              choices = response.choices;
               console.log(questions);
               console.log(types);
-              console.log(mcqanswers);
+              console.log(choices);
               displayQuestion();
 
               document.getElementById("login-screen").style.display = "none";

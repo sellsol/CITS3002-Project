@@ -26,7 +26,7 @@ class TM_student:
             start, end = indexes_in_qb(QB)
             line_questions = QB_get_questions(QB_portnums[QB], end - start + 1, seed).split("\;")
             self.questions.extend(line_questions[0].split("\,"))
-            self.types.extend(list(map(int, line_questions[1].split(","))))
+            self.types.extend(line_questions[1].split(","))
             self.choices.extend([choice.split("\:") for choice in line_questions[2].split("\,")])
 
     # reads current answers info for this student from the TM_database
@@ -142,13 +142,13 @@ def QB_get_questions(portnum, num_qs, seed):
     if (portnum == 1401):
         questions = (
             "Write a hello world program in C.\;"
-            "0\;"
+            "c\;"
             ""
         )
     else: #portnum is just the other one, 2002 (for now)
         questions = (
             "What is Chris' favourite colour?\,Which is not a network layer routing algorithm?\;"
-            "1,1\;"
+            "m,m\;"
             "red\:green\:blue\:black\:yellow\,flooding\:leaky bucket\:link state\:distance vector"
         )
     return questions
