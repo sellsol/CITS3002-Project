@@ -6,6 +6,7 @@ from datastructs import *
 
 hostName = "localhost"
 serverPort = 8000
+loginFile = "test_login_file.txt"
 
 class MyServer(BaseHTTPRequestHandler):            
     # Builds the html page
@@ -33,10 +34,11 @@ class MyServer(BaseHTTPRequestHandler):
             username = data["username"]
             password = data["password"]
             
-            if validate_student("test_login_file.txt" ,username, password):
-                student = TM_student(username)
-                student.get_questions()
-                student.get_answers()
+            if validate_student(loginFile ,username, password):
+                questions, types, choices = get_questions(username)
+                current_finished, current_marks, attempts, marks = get_answers(username)
+                
+                print("\tLogged in: " + username)
                 
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
@@ -44,9 +46,9 @@ class MyServer(BaseHTTPRequestHandler):
                 #questions_json = json.dumps(questions)
                 
                 # Send success and questions data
-                response = {"success": True, "questions": student.questions, "types": student.types, 
-                            "choices": student.choices, "current_finished": student.current_finished, 
-                            "current_marks": student.current_marks, "attempts": student.attempts, "marks": student.marks}
+                response = {"success": True, "questions": questions, "types": types, 
+                            "choices": choices, "current_finished": current_finished, 
+                            "current_marks": current_marks, "attempts": attempts, "marks": marks}
                 self.wfile.write(json.dumps(response).encode("utf-8"))
             else:
                 self.send_response(200)
@@ -58,24 +60,22 @@ class MyServer(BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             data = body.decode("utf-8")
-            answer, pos, attempts = data.split(":")
+            username, answer, pos, attempts = data.split(":")
             answer = unquote(answer)
             
             # TODO: Do something with this data
-            print("Answer: " + answer)
-            print("Question Number: " + pos)
+            print("\tUsername: " + username)
+            print("\tQuestion Index: " + pos)
+            print("\tAnswer: " + answer)
             
             self.send_response(200)
             self.end_headers()
             
-            response = {"success": True, "correct": check_answer(pos, answer, attempts)} 
+            response = {"success": True, "correct": check_answer(username, int(pos), answer, int(attempts))} 
             self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
-
-def check_answer(pos, answer, attempts):
-    return True
 
 if __name__ == "__main__":
     # Makes a server object
