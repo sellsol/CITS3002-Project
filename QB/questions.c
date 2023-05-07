@@ -3,23 +3,19 @@
 */
 
 /*Compile with:
-    cc -o questions questions.c
+    cc -o questions questions.c -lm
 */
-#define _POSIX_C_SOURCE 200809L
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 
+#include "questions.h"
 
 const int MAX_LINE_INDEX = 11; //update according to number of questions in QB's
+const int MIN_LINE_INDEX = 1; //lowest line number in QB
 const int MAX_LINE_LEN = 500; //max length of a line in question set
-
 char **ques_types_ans; //pointer to question, types, and answers string
 const int NUM_QAT_STRINGS = 3; //number of string in ques_types_ans string
 
-char *PY_QB = "questionset_py.csv"; //qb for python
-char *C_QB = "questionset_c.csv"; //qb for c
+char *PY_Q = "questionset_py.csv"; //qb ques for python
+char *C_Q = "questionset_c.csv"; //qb ques for c
 
 /*
 * Returns a list of question ids
@@ -34,12 +30,10 @@ int question_ids(int*ids,char prog_lang,int num,int seed){
 
     //generating question ids for 
     srand(seed);
-    int upper = 11;//change according to number of available question in the respective QB
-    int lower = 1;
 
     int i = 0;
     while (i<num){
-        ids[i] = (rand() % (upper - lower + 1)) + lower;
+        ids[i] = (rand() % (MAX_LINE_INDEX - MIN_LINE_INDEX + 1)) + MIN_LINE_INDEX;
         //unique set of numbers
         bool unique = true;
         int j = 0;
@@ -101,9 +95,9 @@ int get_questions(char prog_lang,int seed, int num){
 
     char *filename;
     if(prog_lang=='p'){
-        filename = PY_QB;
+        filename = PY_Q;
     }else if(prog_lang == 'c'){
-        filename = C_QB;
+        filename = C_Q;
     }else{
         printf("%s\n","QB language is not supported");
         return(1);
@@ -168,41 +162,41 @@ int get_questions(char prog_lang,int seed, int num){
 }
 
 
-int main(){
-    int num = 10;
-    int seed = 12;
-    char prog_lang = 'p';
-    // char*filename;
+// int main(){
+//     int num = 10;
+//     int seed = 12;
+//     char prog_lang = 'p';
+//     // char*filename;
 
-    // if(prog_lang=='p'){
-    //     filename = PY_QB;
-    // }else if(prog_lang == 'c'){
-    //     filename = C_QB;
-    // }else{
-    //     printf("%s\n","QB language is not supported");
-    //     return(1);
-    // }
+//     // if(prog_lang=='p'){
+//     //     filename = PY_Q;
+//     // }else if(prog_lang == 'c'){
+//     //     filename = C_Q;
+//     // }else{
+//     //     printf("%s\n","QB language is not supported");
+//     //     return(1);
+//     // }
 
-    // // testing question ids
-    // int *ids = malloc(num*sizeof(int));
-    // int get_ids = question_ids(ids,prog_lang,num,seed);
-    // // int i = 0;
-    // // while(i<num){
-    // //     printf("%d\n",ids[i]);
-    // //     ++i;
-    // // }
+//     // // testing question ids
+//     // int *ids = malloc(num*sizeof(int));
+//     // int get_ids = question_ids(ids,prog_lang,num,seed);
+//     // // int i = 0;
+//     // // while(i<num){
+//     // //     printf("%d\n",ids[i]);
+//     // //     ++i;
+//     // // }
 
-    // int line_index = 3;
-    // //testing a question
-    // char *line;
-    // line = a_question(line,filename,line_index);
-    // // printf("%s",line);
+//     // int line_index = 3;
+//     // //testing a question
+//     // char *line;
+//     // line = a_question(line,filename,line_index);
+//     // // printf("%s",line);
 
-    //testing get_questions
-    int ques = get_questions(prog_lang,seed,num);
-    printf("%s\n",ques_types_ans[0]);
-    printf("%s\n",ques_types_ans[1]);
-    printf("%s\n",ques_types_ans[2]);
+//     //testing get_questions
+//     int ques = get_questions(prog_lang,seed,num);
+//     printf("%s\n",ques_types_ans[0]);
+//     printf("%s\n",ques_types_ans[1]);
+//     printf("%s\n",ques_types_ans[2]);
 
-    return 0;
-}
+//     return 0;
+// }
