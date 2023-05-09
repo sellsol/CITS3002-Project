@@ -161,6 +161,64 @@ int get_questions(char prog_lang,int seed, int num){
     return 0;
 }
 
+// char **questions; //list of all questions
+// int get_ques(char prog_lang,int seed,int num){
+
+//     int*ids = malloc(num*sizeof(int));
+//     question_ids(ids,prog_lang,num,seed);
+
+//     questions=realloc(questions, (num + 1) * sizeof(questions[0]));
+
+//     char *sep = ","; //general and ans seperator
+
+//     char *filename;
+//     if(prog_lang=='p'){
+//         filename = PY_Q;
+//     }else if(prog_lang == 'c'){
+//         filename = C_Q;
+//     }else{
+//         printf("%s\n","QB language is not supported");
+//         return(1);
+//     }
+
+//     int i = 0;
+//     char*line;
+//     char*ques;
+//     char*ans;
+//     while(i<num){
+//         int line_index = ids[i];
+//         line=a_question(line,filename,line_index);
+        
+//         //question type
+//         line=strstr(line,sep);
+//         line = line + 1;
+//         char type = line[0];
+
+//         //question and answer strings
+//         line=strstr(line,sep);
+//         line = line+1;
+
+//         //question string if mcq
+//         if(type=='m'){
+//             ans = strstr(line,sep);
+//             int q_position = ans - line;
+//             ques = strndup(line,q_position);
+//             ans = ans+1;//removing ","
+//         }else{
+//             ans=" ";
+//             ques = line;
+//         }
+        
+//         //debugging
+//         // printf("%c\n",type);
+//         // printf("%s\n",ques);
+//         // printf("%s\n",ans);
+
+//         questions[i] = strdup(question);
+//         ++i;
+//     }
+//     return 0;
+// }
 
 // int main(){
 //     int num = 10;
