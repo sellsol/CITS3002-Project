@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "questions.h"
+#include "questions.c"
 //sendAll Shamelessly stolen from beej's guide to networking
 int sendAll(int s, char *buf, int *len) {
 	int total = 0;
@@ -93,7 +95,10 @@ int main(void) {
 			int64_t seed;
 			memcpy(&seed, out + 2, sizeof(int64_t));
 			
-			printf("Generate request %d, %016llX\n", numQuestions, &seed);
+			//printf("Generate request %d, %016llX\n", numQuestions, &seed);
+			int *ids = malloc(numQuestions * sizeof(int));
+			int val = question_ids(ids, 'c', numQuestions, seed);
+				
 		} else if (out[0] == 'C') { //Check questions
 			char questionIndex = out[1];
 			int64_t seed;
@@ -101,7 +106,7 @@ int main(void) {
 			char lastAttempt = out[10];
 			char *answer = out + 11;
 
-			printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
+			//printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
 		} else {
 			//?????
 			printf("Unknown request\n");

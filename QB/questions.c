@@ -21,7 +21,7 @@ char *C_Q = "questionset_c.csv"; //qb ques for c
 * Returns a list of question ids
 * The seed is the unique int that is associated with the string
 */
-int question_ids(int*ids,char prog_lang,int num,int seed){
+int question_ids(int*ids, char prog_lang, char num, int64_t seed){
 
     if(prog_lang != 'c' && prog_lang != 'p'){
         perror("QB does not exist");
@@ -31,12 +31,12 @@ int question_ids(int*ids,char prog_lang,int num,int seed){
     //generating question ids for 
     srand(seed);
 
-    int i = 0;
+    char i = 0;
     while (i<num){
         ids[i] = (rand() % (MAX_LINE_INDEX - MIN_LINE_INDEX + 1)) + MIN_LINE_INDEX;
         //unique set of numbers
         bool unique = true;
-        int j = 0;
+        char j = 0;
         while(j<i){
             if(ids[j]==ids[i])unique=false;
             ++j;

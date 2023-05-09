@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 
 //globals.c
 extern const int MAX_LINE_INDEX; //update according to number of questions in QB's
@@ -17,7 +18,7 @@ extern char *PY_A; //ans for python
 extern char *C_A; //ans for c
 
 //questions.c
-extern int question_ids(int*,char,int,int); //a list of question ids
+extern int question_ids(int*,char,char,int64_t); //a list of question ids
 extern char *a_question(char*,char*,int); //Returns pointer to a questions associated with the question/line id
 extern int get_questions(char,int,int); //a list with 3 strings: questions, types, answers
 
