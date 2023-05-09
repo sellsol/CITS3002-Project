@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wait.h>
+#include <stdint.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -31,12 +32,13 @@ int sendAll(int s, char *buf, int *len) {
 }
 
 //out should be length 1024 for testing, i'll come up with something better later
-int recvAll(int s, char *out) {
+char* recvAll(int s) {
 	int len;
 	int ret = recv(s, &len, sizeof len, 0); //Get length of message
 	if (ret == -1) {
 		//Go apeshit
 	}
+	char *out = malloc(len); //Error handle here
 	//len = ntohl(len); Don't know what beej was thinking, this shit just breaks everything
 	int cpy = len;
 	
@@ -44,15 +46,15 @@ int recvAll(int s, char *out) {
 	char *b = out;
 
 	while (len > 0) {
-		int n = recv(s, b, len, 0);
+		int n = recv(s, b, len, 0); //Error handle here
 		if (n == -1) {
-			return -1;
+			return NULL;
 		}
 		b += n;
 		len -= n;
 	}
 
-	return cpy;
+	return out;
 }
 
 int main(void) {
@@ -62,8 +64,7 @@ int main(void) {
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-
-	if ((status = getaddrinfo("10.135.190.244", "65432", &hints, &res)) != 0) {
+	if ((status = getaddrinfo("127.0.0.1", "65432", &hints, &res)) != 0) {
 		fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
 		exit(1);
 	}
@@ -79,13 +80,34 @@ int main(void) {
 		exit(1);
 	}
 
+	printf("SUCCESSFULLY CONNECTED TO SERVER\n");
+
 	//Here's where we start our loop
 	int len = 0;
+	char *out;
 	while (len != -1) {
-		char *msg = malloc(1024);
-		int len = recvAll(sockfd, msg);
-		printf("%s", msg);
-		len = sendAll(sockfd, msg, &len);
+		out = recvAll(sockfd);
+
+		if (out[0] == 'G') { //Generate questions
+			char numQuestions = out[1];
+			int64_t seed;
+			memcpy(&seed, out + 2, sizeof(int64_t));
+			
+			printf("Generate request %d, %016llX\n", numQuestions, &seed);
+		} else if (out[0] == 'C') { //Check questions
+			char questionIndex = out[1];
+			int64_t seed;
+			memcpy(&seed, out + 2, sizeof(int64_t));
+			char lastAttempt = out[10];
+			char *answer = out + 11;
+
+			printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
+		} else {
+			//?????
+			printf("Unknown request\n");
+		}
+
+		free(out);
 	}
 
 	close(sockfd);
