@@ -98,7 +98,11 @@ int main(void) {
 			//printf("Generate request %d, %016llX\n", numQuestions, &seed);
 			int *ids = malloc(numQuestions * sizeof(int));
 			int val = question_ids(ids, 'c', numQuestions, seed);
-				
+			
+			for (char i = 0; i < numQuestions; i++) {
+				printf("%i\n", ids[i]);
+			}
+			//printf("%i\n");		
 		} else if (out[0] == 'C') { //Check questions
 			char questionIndex = out[1];
 			int64_t seed;
