@@ -109,7 +109,6 @@ int main(void) {
 			memcpy(&seed, out + 2, sizeof(int64_t));
 			char lastAttempt = out[10];
 			char *answer = out + 11;
-
 			//printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
 		} else {
 			//?????

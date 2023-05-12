@@ -114,7 +114,7 @@ char* testCode(int *completed, char *path, char *expectedOut, int lastAttempt, c
 
 //Returns 0 if any of the tests fail, 1 otherwise. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
-char* compileCode(char* question, char* code, int questionNum, int lastAttempt, char *imageComp) {
+char* compileCode(int* completed, char* question, char* code, int lastAttempt) {
 	//char codePath[20];
 	//strcpy(codePath, "./code/XXXXXX.c"); //Make directories for each question
 	//int pFd = mkstemps(codePath, 2);
