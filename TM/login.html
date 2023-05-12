@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sample Questions</title>
+    <!-- Styling -->
+  </head>
+  <body>
+    <!-- Login Page -->
+    <div id="login-screen">
+      <h1>Login</h1>
+      <form id="login-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" /><br /><br />
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" /><br /><br />
+        <input type="submit" value="Login" />
+      </form>
+    </div>
+
+    <script>
+      // Submits login form
+      function submitLoginForm() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+      
+        // make an AJAX call to authenticate the user's credentials
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            console.log(xhr);
+            if (xhr.status === 200) {
+              console.log("200");
+              window.location.href = "/";
+            } else if (xhr.status === 401) {
+              // invalid
+              console.log("401");
+              alert("Invalid username or password.");
+            } else if (xhr.status === 303) {
+              console.log("303");
+              console.log("Redirect");
+              // redirect response, update window location
+              window.location.href = "/";
+            }
+          }
+        };
+        const data = {
+          username: username,
+          password: password,
+        };
+        console.log(data);
+        xhr.send(JSON.stringify(data));
+      }
+      
+
+      // Listens for submitting form
+      document
+        .getElementById("login-form")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          submitLoginForm();
+        });
+    </script>
+  </body>
+</html>
