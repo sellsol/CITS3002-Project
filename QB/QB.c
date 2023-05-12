@@ -89,8 +89,16 @@ int main(void) {
 	char *out;
 	while (len != -1) {
 		out = recvAll(sockfd);
-
-		if (out[0] == 'G') { //Generate questions
+		
+		if (strlen(out) == 0) {
+			printf("Connection to server lost.\n");
+			printf("Exiting program, rerun to reconnect\n");
+			close(sockfd);
+			free(out);
+			freeaddrinfo(res);
+			return(0);
+		} 
+		else if (out[0] == 'G') { //Generate questions
 			char numQuestions = out[1];
 			int64_t seed;
 			memcpy(&seed, out + 2, sizeof(int64_t));
@@ -98,12 +106,19 @@ int main(void) {
 			//printf("Generate request %d, %016llX\n", numQuestions, &seed);
 			int *ids = malloc(numQuestions * sizeof(int));
 			int val = question_ids(ids, 'c', numQuestions, seed);
-			
+
 			for (char i = 0; i < numQuestions; i++) {
 				printf("%i\n", ids[i]);
 			}
-			//printf("%i\n");		
-		} else if (out[0] == 'C') { //Check questions
+			//printf("%i\n");
+
+			printf("request type = %c, num questions = %i, seed = %i\n", out[0], out[1], out[2]);//intesting
+			char buf[] = "heyo! Request G received!"; //intesting
+			int length = strlen(buf);
+			sendAll(sockfd, buf, &length);//intesting
+			printf("Sending reply: %s\n", buf);//intesting
+		} 
+		else if (out[0] == 'C') { //Check questions
 			char questionIndex = out[1];
 			int64_t seed;
 			memcpy(&seed, out + 2, sizeof(int64_t));
@@ -111,17 +126,14 @@ int main(void) {
 			char *answer = out + 11;
 
 			//printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
-		} else {
-			//?????
-			printf("Unknown request\n");
+		} 
+		else {
+			printf("Unknown request: %s\n", out);//intesting
+			char buf[] = "hoi~";//intesting
+			int length = strlen(buf);//intesting
+			sendAll(sockfd, buf, &length);//intesting
+			printf("Sending reply: %s\n", buf);//intesting
 		}
 
-		free(out);
 	}
-
-	close(sockfd);
-
-	freeaddrinfo(res);
-
-	return 0;
 }
