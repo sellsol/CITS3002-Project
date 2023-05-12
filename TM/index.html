@@ -19,12 +19,14 @@
         font-size: 2rem;
         margin-bottom: 1rem;
         text-align: center;
+        font-family: Arial, sans-serif;
       }
 
       h2 {
         display: inline-block;
         font-size: 1.5rem;
         margin-bottom: 0.5rem;
+        font-family: Arial, sans-serif;
       }
 
       form {
@@ -36,6 +38,7 @@
       label {
         font-size: 1rem;
         margin-bottom: 0.5rem;
+        font-family: Arial, sans-serif;
       }
 
       input[type="password"],
@@ -45,6 +48,7 @@
         border-radius: 0.5rem;
         border: none;
         margin-bottom: 1rem;
+        font-family: Arial, sans-serif;
       }
 
       #answer {
@@ -59,6 +63,7 @@
         margin-bottom: 1rem;
         resize: none;
         overflow: hidden;
+        font-family: Arial, sans-serif;
       }
 
       input[type="submit"] {
@@ -69,6 +74,7 @@
         background-color: #0077cc;
         color: #fff;
         cursor: pointer;
+        font-family: Arial, sans-serif;
       }
 
       button {
@@ -80,6 +86,7 @@
         color: #fff;
         cursor: pointer;
         margin-right: 1rem;
+        font-family: Arial, sans-serif;
       }
 
       button:last-of-type {
@@ -91,7 +98,7 @@
         background-color: #005fa3;
       }
 
-      #button-container {
+      .horizontal-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -115,6 +122,7 @@
         border-radius: 5px;
         padding: 5px 10px;
         background-color: #f2f2f2;
+        font-family: Arial, sans-serif;
       }
       
       #options input[type="radio"] {
@@ -133,6 +141,38 @@
         background-color: #0077cc;
         border-color: #0077cc;
       }
+
+      .info-box {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        background-color: #0077cc;
+        color: #fff;
+      }
+      
+      .info-box p {
+        margin: 5px 0;
+        font-weight: bold;
+        font-size: 18px;
+        font-family: Arial, sans-serif;
+      }
+      
+      #current-finished, #current-marks, #attempts, #marks {
+        font-size: 24px;
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+      }
+
+      .left {
+        margin-left: 0;
+      }
+
+      .right {
+        margin-right: 0;
+      }
+      
       
     </style>
   </head>
@@ -151,7 +191,17 @@
 
     <!-- Questions Page -->
     <div id="question-screen" style="display: none">
-      <h1>Sample Questions</h1>
+      <div class="horizontal-container">
+        <div class="info-box left">
+          <p>Current Finished</p>
+          <p id="current-finished"></p>
+        </div>
+        <div class="info-box right">
+          <p>Current Marks</p>
+          <p id="current-marks"></p>
+        </div>
+      </div>
+      <h1 id="username-header"></h1>
       <h2 id="question-number"></h2>
       <h2>.</h2>
       <h2 id="question"></h2>
@@ -173,11 +223,20 @@
       </form>
 
       <br>
-      <div id="button-container">
+      <div class="horizontal-container">
         <button id="back" onclick="previousQuestion()">Back</button>
         <button id="next" onclick="nextQuestion()">Next</button>
       </div>
-
+      <div class="horizontal-container">
+        <div class="info-box left">
+          <p>Attempts</p>
+          <p id="attempts"></p>
+        </div>
+        <div class="info-box right">
+          <p>Marks</p>
+          <p id="marks"></p>
+        </div>
+      </div>
     </div>
 
 
@@ -189,12 +248,23 @@
       var currentQuestion = 0;
       var questions = [""];
       var types = [""]; //type can be "c" for coding or "m" for multiple choice
-      var mcqanswers = [""];
+      var choices = [""];
+      var username = "";
+      var current_finished = 0;
+      var current_marks = 0;
+      var attempts = [];
+      var marks = [];
 
       // Adds things to screen
       function displayQuestion() {
         document.getElementById("question-number").innerHTML = currentQuestion + 1;
         document.getElementById("question").innerHTML = questions[currentQuestion];
+        document.getElementById("username-header").innerHTML = username;
+        document.getElementById("current-finished").innerHTML = current_finished;
+        document.getElementById("current-marks").innerHTML = current_marks;
+        document.getElementById("attempts").innerHTML = attempts[currentQuestion];
+        document.getElementById("marks").innerHTML = marks[currentQuestion];
+        console.log(username);
         if (types[currentQuestion] == "c") {
           document.getElementById("multichoice-screen").style.display = "none";
           document.getElementById("coding-screen").style.display = "block";
@@ -210,13 +280,13 @@
             options.removeChild(options.firstChild);
           }
           
-          for (let i = 0; i < mcqanswers[currentQuestion].length; i++) {
+          for (let i = 0; i < choices[currentQuestion].length; i++) {
             const radio = document.createElement("input");
             radio.type = "radio";
             radio.name = "mcq";
             radio.value = i;
             const label = document.createElement("label");
-            label.textContent = mcqanswers[currentQuestion][i];
+            label.textContent = choices[currentQuestion][i];
             options.appendChild(radio);
             options.appendChild(label);
           }
@@ -226,6 +296,7 @@
 
       //  Sends answer from form to python
       function submitAnswer() {
+        if (attempts[currentQuestion] > 2 || marks[currentQuestion] != 0) return;
         var answer;
         if (types[currentQuestion] == "c") {
           answer = document.getElementById("answer").value;
@@ -243,11 +314,29 @@
         // make an HTTP POST request to the Python server with the form data
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/submit-answer", true);
-        xhr.setRequestHeader(
-          "Content-Type",
-          "application/x-www-form-urlencoded"
-        );
-        xhr.send(encodeURIComponent(answer) + ":" + currentQuestion);
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+              var response = JSON.parse(xhr.responseText);
+              if (response.correct) {
+                correct();
+              }
+              else {
+                incorrect();
+              }
+              // Handle the response from the server here
+              displayQuestion();
+              console.log(xhr.responseText);
+            } else {
+              // Handle errors here
+              console.error(xhr.statusText);
+            }
+          }
+        };
+        
+        xhr.send(username + ":" + encodeURIComponent(answer) + ":" + currentQuestion + ":" + attempts[currentQuestion]);
+        
       }
 
       // Change to previous question
@@ -264,6 +353,18 @@
           currentQuestion++;
           displayQuestion();
         }
+      }
+
+      function correct() {
+        marks[currentQuestion] = 3 - attempts[currentQuestion];
+        attempts[currentQuestion] ++;
+        current_finished ++;
+        current_marks += marks[currentQuestion];
+      }
+
+      function incorrect() {
+        attempts[currentQuestion] ++;
+        if (attempts[currentQuestion] == 3) current_finished ++;
       }
 
       // Resize answer box
@@ -286,7 +387,7 @@
 
       // Submits login form
       function submitLoginForm() {
-        var username = document.getElementById("username").value;
+        username = document.getElementById("username").value;
         var password = document.getElementById("password").value;
 
         // make an AJAX call to authenticate the user's credentials
@@ -301,10 +402,19 @@
               // authentication succeeded, display the question screen
               questions = response.questions;
               types = response.types;
-              mcqanswers = response.mcqanswers;
+              choices = response.choices;
+              current_finished = response.current_finished;
+              current_marks = response.current_marks;
+              attempts = response.attempts;
+              marks = response.marks;
+
               console.log(questions);
               console.log(types);
-              console.log(mcqanswers);
+              console.log(choices);
+              console.log(current_finished);
+              console.log(current_marks);
+              console.log(attempts);
+              console.log(marks);
               displayQuestion();
 
               document.getElementById("login-screen").style.display = "none";
