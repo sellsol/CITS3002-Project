@@ -189,6 +189,9 @@ int main(int num,int seed){
     // strncat(sending_txt,ques_types_ans[2],strlen(ques_types_ans[2]));
     //printf("\nSending text:\n%s\n",sending_txt);
 
+    /*
+    * serialising
+    */
     int length = strlen(sending_txt);
     int digits = floor(log10(length)+1)+1;
     char length_str[digits];
