@@ -74,15 +74,9 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-if __name__ == "__main__":
-    # Makes a server object
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    webServer.server_close()
-    print("Server stopped.")
+    # handles when user browser unexpectedly closes
+    def handle(self):
+        try:
+            BaseHTTPRequestHandler.handle(self)
+        except socket.error:
+            pass
