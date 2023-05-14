@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 
 //globals.c
 extern const int MAX_LINE_INDEX; //update according to number of questions in QB's
