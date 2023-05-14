@@ -13,6 +13,10 @@
 
 #include "questions.h"
 #include "questions.c"
+#include "mode.h"
+
+enum PROGRAM PROGRAM_MODE = NONE;
+
 //sendAll Shamelessly stolen from beej's guide to networking
 int sendAll(int s, char *buf, int *len) {
 	int total = 0;
@@ -59,7 +63,32 @@ char* recvAll(int s) {
 	return out;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+	PROGRAM_MODE = NONE;
+	int c;
+	while ((c = getopt(argc, argv, "cp:")) != -1) {
+		switch (c) {
+			case 'c':
+				if (PROGRAM_MODE == NONE) {
+					PROGRAM_MODE = C;
+					break;
+				} else {
+					return 1;
+				}
+			case 'p':
+				if (PROGRAM_MODE == NONE) {
+					PROGRAM_MODE = PYTHON;
+					break;
+				} else {
+					return 1;
+				}
+			case '?':
+				//Handle appropriately
+			default:
+				abort();
+		}
+	}
+
 	int status, sockfd;
 	struct addrinfo hints, *res;
 

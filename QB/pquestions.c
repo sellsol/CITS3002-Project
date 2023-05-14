@@ -7,6 +7,8 @@
 #include <wait.h>
 #include <sys/stat.h>
 
+#include "mode.h"
+
 //TODO: Fix perror messages? They're kind of bland right now.
 
 //Reads text file to string and returns pointer to string. Pointer must be freed after use.
@@ -15,7 +17,7 @@ char* readTextFile(char *path) {
 	stat(path, buf); //Need to error handle
 	int size = buf->st_size;
 
-	char *out = malloc(size); //Need to really make sure this works
+	char *out = malloc(size); //Need to really make sure this works Feels like I should add 1
 	int oFd = open(path, O_RDONLY);
 	int got = read(oFd, out, size);
 	while (got < size) {
@@ -46,7 +48,11 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 			dup2(thepipe[1], 1);
 
 			close(thepipe[1]);
-			execl(path, "code", (char *) NULL);
+            if (PROGRAM_MODE == C) {
+			    execl(path, "code", (char *) NULL);
+            } else {
+                execl("/usr/bin/python3", "/usr/bin/python3", path, (char *) NULL);
+            }
 			//Should probably use execv for multiple parameters
 			perror("User program crashed");
 			exit(EXIT_FAILURE);
@@ -123,117 +129,126 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 
 //Returns 0 if any of the tests fail, 1 otherwise. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
-char** compileCode(int* completed, char* question, char* code, int lastAttempt) {
+char** compileCode(int* completed, char prog_lang, char* question, char* code, int lastAttempt) {
 	//Create temporary directory for running question
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
 
-	//Create path for the compiled code
-	char *codePath = calloc(strlen("./code/XXXXXX") + strlen("/code.c"), sizeof(char));
+    char *vl;
+    if (PROGRAM_MODE == C) {
+        vl = "/code.c";
+    } else {
+        v1 = "/code.py"
+    }
+
+    //Create path for the compiled code
+	char *codePath = calloc(strlen("./code/XXXXXX") + strlen(v1) , sizeof(char));
 
 	strcat(codePath, dirPath);
-	strcat(codePath, "/code.c");
+    strcat(codePath, v1);
 
-	//Write the code to file
-	int pFd = creat(codePath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); //Error handle here
-	write(pFd, code, strlen(code));
-	close(pFd);
+    //Write the code to file
+    int pFd = creat(codePath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); //Error handle here
+    write(pFd, code, strlen(code));
+    close(pFd);
 
-	//Get the executable path
-	char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
+    if (PROGRAM_MODE == PYTHON) {
+	    //Get the executable path
+	    char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
 
-	switch (fork()) {
-		case -1:
-			//Halt and catch fire
-			exit(EXIT_FAILURE);
-		case 0: //Child process - execv
-			execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
-			perror("/usr/bin/gcc");
-			exit(EXIT_FAILURE);
-		default: //Parent process - run tests
-			//Wait until child program has finished executing
-			wait(NULL);
+        switch(fork()) {
+            case -1:
+                exit(EXIT_FAILURE);
+            case 0: //Child process - execv
+			    execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
+			    perror("/usr/bin/gcc");
+			    exit(EXIT_FAILURE);
+            default:
+                wait(NULL);
+        }
+        free(codePath);
+        codePath = execPath;
+    }
 
-			char *questionPath = calloc(strlen("./progq//") + strlen(question) + 1, sizeof(char));
-			strcat(questionPath, "./progq/");
-			strcat(questionPath, question);
-			strcat(questionPath, "/");
-			//Open relevant folder, start running all tests
-			DIR *d = opendir(questionPath); //Combine this with questionNumber
+    char *questionPath = calloc(strlen("./progq//") + strlen(question) + 1, sizeof(char));
+	strcat(questionPath, "./progq/");
+	strcat(questionPath, question);
+	strcat(questionPath, "/");
+	//Open relevant folder, start running all tests
+	DIR *d = opendir(questionPath);
 
-			//Go through every entry in the directory stream
-			for (struct dirent *dir = readdir(d); dir != NULL; dir = readdir(d)) {
-				if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
-				printf("%s\n", dir->d_name);
+	//Go through every entry in the directory stream
+	for (struct dirent *dir = readdir(d); dir != NULL; dir = readdir(d)) {
+			if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
+			//printf("%s\n", dir->d_name);
 
-				char *inPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/in"), sizeof(char));
-				char *outPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/out"), sizeof(char));
-				char *pngPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/png"), sizeof(char));
-				//optimise
+			char *inPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/in"), sizeof(char));
+			char *outPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/out"), sizeof(char));
+			char *pngPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/png"), sizeof(char));
+			//optimise
 
-				//string concatenate path names		Better to use snprintf?
-				strcat(inPath, questionPath);
-				strcat(inPath, dir->d_name);
-				strcat(inPath, "/in");
+			//string concatenate path names		Better to use snprintf?
+			strcat(inPath, questionPath);
+			strcat(inPath, dir->d_name);
+			strcat(inPath, "/in");
 
-				strcat(outPath, questionPath);
-				strcat(outPath, dir->d_name);
-				strcat(outPath, "/out");
+			strcat(outPath, questionPath);
+			strcat(outPath, dir->d_name);
+			strcat(outPath, "/out");
 
-				strcat(pngPath, questionPath);
-				strcat(pngPath, dir->d_name);
-				strcat(pngPath, "/png");
+			strcat(pngPath, questionPath);
+			strcat(pngPath, dir->d_name);
+			strcat(pngPath, "/png");
 
-				//Get input file if it exists
-				char *in = NULL;
-				if (access(inPath, F_OK) == 0) {
-					in = readTextFile(inPath);
-				}
-
-				char *png = NULL;
-				if (access(pngPath, F_OK) == 0) {
-					png = readTextFile(pngPath);
-				}
-
-				char *out = NULL;
-				if (access(outPath, F_OK) == 0) {
-					out = readTextFile(outPath);
-				}
-				
-				//Free paths
-				free(inPath);
-				free(outPath);
-				free(pngPath);
-
-				int ret;
-				char **output = testCode(&ret, execPath, out, lastAttempt, png);
-				
-				//Free provided data
-				free(in);
-				free(out);
-				free(png);
-
-				if (ret == 0) {
-					*completed = 0;
-					closedir(d);
-					unlink(codePath);
-					unlink(execPath);
-					if (lastAttempt == 1) {
-						return output;
-					}
-
-					free(output);
-					return NULL;
-				}
+			//Get input file if it exists
+			char *in = NULL;
+			if (access(inPath, F_OK) == 0) {
+				in = readTextFile(inPath);
 			}
 
-			*completed = 1;
+			char *png = NULL;
+			if (access(pngPath, F_OK) == 0) {
+				png = readTextFile(pngPath);
+			}
 
-			closedir(d);
-			unlink(codePath);
-			unlink(execPath);
-			return NULL;
-	}
+			char *out = NULL;
+			if (access(outPath, F_OK) == 0) {
+				out = readTextFile(outPath);
+			}
+				
+			//Free paths
+			free(inPath);
+			free(outPath);
+			free(pngPath);
+
+			int ret;
+			char **output = testCode(&ret, execPath, out, lastAttempt, png);
+			
+			//Free provided data
+			free(in);
+			free(out);
+			free(png);
+
+			if (ret == 0) {
+				*completed = 0;
+				closedir(d);
+				unlink(codePath);
+				unlink(execPath);
+				if (lastAttempt == 1) {
+					return output;
+				}
+
+				free(output);
+				return NULL;
+			}
+		}
+
+		*completed = 1;
+
+		closedir(d);
+		unlink(codePath);
+		unlink(execPath);
+		return NULL;
 }
 
 int main() {

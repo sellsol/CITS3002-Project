@@ -46,7 +46,7 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 			dup2(thepipe[1], 1);
 
 			close(thepipe[1]);
-			execl(path, "code", (char *) NULL);
+			execl("/usr/bin/python3", "/usr/bin/python3", path, (char *) NULL);
 			//Should probably use execv for multiple parameters
 			perror("User program crashed");
 			exit(EXIT_FAILURE);
@@ -58,7 +58,7 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 				close(thepipe[0]);
 
 				char *imagePath = calloc(strlen("./code/XXXXXX/image.png"), sizeof(char));
-				strndup(imagePath, path, strlen("./code/XXXXXX/"));
+				strncat(imagePath, path, strlen("./code/XXXXXX/"));
 				strcat(imagePath, "image.png");
 				char *outputImage = readTextFile(imagePath);
 
@@ -129,116 +129,98 @@ char** compileCode(int* completed, char* question, char* code, int lastAttempt) 
 	char *dirPath = mkdtemp(tempPath);
 
 	//Create path for the compiled code
-	char *codePath = calloc(strlen("./code/XXXXXX") + strlen("/code.c"), sizeof(char));
+	char *codePath = calloc(strlen("./code/XXXXXX") + strlen("/code.py"), sizeof(char));
 
 	strcat(codePath, dirPath);
-	strcat(codePath, "/code.c");
+	strcat(codePath, "/code.py");
 
 	//Write the code to file
 	int pFd = creat(codePath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); //Error handle here
 	write(pFd, code, strlen(code));
 	close(pFd);
 
-	//Get the executable path
-	char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
+	char *questionPath = calloc(strlen("./progq//") + strlen(question) + 1, sizeof(char));
+	strcat(questionPath, "./progq/");
+	strcat(questionPath, question);
+	strcat(questionPath, "/");
+	//Open relevant folder, start running all tests
+	DIR *d = opendir(questionPath);
 
-	switch (fork()) {
-		case -1:
-			//Halt and catch fire
-			exit(EXIT_FAILURE);
-		case 0: //Child process - execv
-			execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
-			perror("/usr/bin/gcc");
-			exit(EXIT_FAILURE);
-		default: //Parent process - run tests
-			//Wait until child program has finished executing
-			wait(NULL);
+	//Go through every entry in the directory stream
+	for (struct dirent *dir = readdir(d); dir != NULL; dir = readdir(d)) {
+		if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
+		printf("%s\n", dir->d_name);
 
-			char *questionPath = calloc(strlen("./progq//") + strlen(question) + 1, sizeof(char));
-			strcat(questionPath, "./progq/");
-			strcat(questionPath, question);
-			strcat(questionPath, "/");
-			//Open relevant folder, start running all tests
-			DIR *d = opendir(questionPath); //Combine this with questionNumber
+		char *inPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/in"), sizeof(char));
+		char *outPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/out"), sizeof(char));
+		char *pngPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/png"), sizeof(char));
+		//optimise
 
-			//Go through every entry in the directory stream
-			for (struct dirent *dir = readdir(d); dir != NULL; dir = readdir(d)) {
-				if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
-				printf("%s\n", dir->d_name);
+		//string concatenate path names		Better to use snprintf?
+		strcat(inPath, questionPath);
+		strcat(inPath, dir->d_name);
+		strcat(inPath, "/in");
 
-				char *inPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/in"), sizeof(char));
-				char *outPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/out"), sizeof(char));
-				char *pngPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/png"), sizeof(char));
-				//optimise
+		strcat(outPath, questionPath);
+		strcat(outPath, dir->d_name);
+		strcat(outPath, "/out");
 
-				//string concatenate path names		Better to use snprintf?
-				strcat(inPath, questionPath);
-				strcat(inPath, dir->d_name);
-				strcat(inPath, "/in");
+		strcat(pngPath, questionPath);
+		strcat(pngPath, dir->d_name);
+		strcat(pngPath, "/png");
 
-				strcat(outPath, questionPath);
-				strcat(outPath, dir->d_name);
-				strcat(outPath, "/out");
+		//Get input file if it exists
+		char *in = NULL;
+		if (access(inPath, F_OK) == 0) {
+			in = readTextFile(inPath);
+		}
 
-				strcat(pngPath, questionPath);
-				strcat(pngPath, dir->d_name);
-				strcat(pngPath, "/png");
+		char *png = NULL;
+		if (access(pngPath, F_OK) == 0) {
+			png = readTextFile(pngPath);
+		}
 
-				//Get input file if it exists
-				char *in = NULL;
-				if (access(inPath, F_OK) == 0) {
-					in = readTextFile(inPath);
-				}
-
-				char *png = NULL;
-				if (access(pngPath, F_OK) == 0) {
-					png = readTextFile(pngPath);
-				}
-
-				char *out = NULL;
-				if (access(outPath, F_OK) == 0) {
-					out = readTextFile(outPath);
-				}
+		char *out = NULL;
+		if (access(outPath, F_OK) == 0) {
+			out = readTextFile(outPath);
+		}
 				
-				//Free paths
-				free(inPath);
-				free(outPath);
-				free(pngPath);
+		//Free paths
+		free(inPath);
+		free(outPath);
+		free(pngPath);
 
-				int ret;
-				char **output = testCode(&ret, execPath, out, lastAttempt, png);
+		int ret;
+		char **output = testCode(&ret, codePath, out, lastAttempt, png);
 				
-				//Free provided data
-				free(in);
-				free(out);
-				free(png);
+		//Free provided data
+		free(in);
+		free(out);
+		free(png);
 
-				if (ret == 0) {
-					*completed = 0;
-					closedir(d);
-					unlink(codePath);
-					unlink(execPath);
-					if (lastAttempt == 1) {
-						return output;
-					}
-
-					free(output);
-					return NULL;
-				}
-			}
-
-			*completed = 1;
-
+		if (ret == 0) {
+			*completed = 0;
 			closedir(d);
 			unlink(codePath);
-			unlink(execPath);
+			if (lastAttempt == 1) {
+				return output;
+			}
+
+			free(output);
 			return NULL;
+		}
 	}
+
+	*completed = 1;
+
+	closedir(d);
+	unlink(codePath);
+	return NULL;
 }
 
 int main() {
 	int comp;
-	char *code = "#include <stdio.h>\nint main() {\n\tprintf(\"OH MAH GOOOOOOD\");\n}";
+	char *code = "print(\" You're a dumb stupid baby\")";
 	char **val = compileCode(&comp, "1", code, 1);
 	printf("%s, %s\n", val[0], val[1]);	
 }

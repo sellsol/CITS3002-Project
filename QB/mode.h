@@ -1,0 +1,2 @@
+enum PROGRAM {NONE, C, PYTHON};
+extern enum PROGRAM PROGRAM_MODE;
