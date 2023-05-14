@@ -129,7 +129,7 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 
 //Returns 0 if any of the tests fail, 1 otherwise. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
-char** compileCode(int* completed, char prog_lang, char* question, char* code, int lastAttempt) {
+char** compileCode(int* completed, char* question, char* code, int lastAttempt) {
 	//Create temporary directory for running question
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
@@ -249,11 +249,4 @@ char** compileCode(int* completed, char prog_lang, char* question, char* code, i
 		unlink(codePath);
 		unlink(execPath);
 		return NULL;
-}
-
-int main() {
-	int comp;
-	char *code = "#include <stdio.h>\nint main() {\n\tprintf(\"OH MAH GOOOOOOD\");\n}";
-	char **val = compileCode(&comp, "1", code, 1);
-	printf("%s, %s\n", val[0], val[1]);	
 }

@@ -1,1 +1,0 @@
-print(" You're a dumb stupid baby")
