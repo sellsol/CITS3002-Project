@@ -51,7 +51,7 @@ int question_ids(int*ids, char prog_lang, char num, int64_t seed){
 /*
 * Returns a questions associated with the question/line id
 */
-char *a_question(char*line,char *filename,int line_index){
+char *a_question(char *filename,int line_index){
 
     if(line_index>MAX_LINE_INDEX){
         perror("question does not exist\n");
@@ -74,8 +74,7 @@ char *a_question(char*line,char *filename,int line_index){
         perror("Line does not exist in file\n");
         exit(1);
     }
-    line = buffer;
-    return line;
+    return buffer;
 }
 
 /*
@@ -111,7 +110,7 @@ int get_questions(char prog_lang,int seed, int num){
     char*ans;
     while(i<num){
         int line_index = ids[i];
-        line=a_question(line,filename,line_index);
+        line=a_question(filename,line_index);
         
         //question type
         line=strstr(line,sep);

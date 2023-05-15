@@ -23,7 +23,7 @@ extern char *C_A; //ans for c
 
 //questions.c
 extern int question_ids(int*,char,char,int64_t); //a list of question ids
-extern char *a_question(char*,char*,int); //Returns pointer to a questions associated with the question/line id
+extern char *a_question(char*,int); //Returns pointer to a questions associated with the question/line id
 extern int get_questions(char,int,int); //a list with 3 strings: questions, types, answers
 
 //mark.c

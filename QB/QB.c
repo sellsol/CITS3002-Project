@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 			printf("Marking question %i...\n", ids[questionIndex]);
 
 			//Gets the question file name
-			char* line = a_question(line, C_Q, ids[questionIndex]);
+			char* line = a_question(C_Q, ids[questionIndex]);
 			char* fileName = strtok(line, ",");
 
 			//Compile and test code

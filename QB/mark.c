@@ -35,7 +35,7 @@ bool mcq_correct(char prog_lang, int index,int seed,char*answer){
     }
 
     //checking q_type
-    char*line=a_question(line,filename,ids[index]);
+    char*line=a_question(filename,ids[index]);
     //printf("%s\n",line);
     line=strstr(line,sep);
     line = line + 1;
