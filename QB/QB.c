@@ -12,7 +12,7 @@
 #include <errno.h>
 
 #include "questions.h"
-#include "questions.c"
+#include "pquestions.h"
 #include "mode.h"
 
 enum PROGRAM PROGRAM_MODE = NONE;
@@ -138,6 +138,16 @@ int main(int argc, char **argv) {
 			memcpy(&seed, out + 2, sizeof(int64_t));
 			char lastAttempt = out[10];
 			char *answer = out + 11;
+
+			int *ids = malloc(questionIndex * sizeof(int));
+			int val = question_ids(ids, 'c', (char)(questionIndex + 1), seed);
+
+			char* line = a_question(line, C_Q, ids[questionIndex]);
+			char* fileName = strtok(line, ",");
+
+			int completed;
+			char** ret = compileCode(&completed, fileName, answer, lastAttempt);
+
 			//printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
 		} else {
 			//?????

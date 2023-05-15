@@ -1,3 +1,6 @@
+#ifndef QUESTIONS
+#define QUESTIONS
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,3 +28,4 @@ extern int get_questions(char,int,int); //a list with 3 strings: questions, type
 
 //mark.c
 extern bool mcq_correct(char,int,int,char*); //returns true or false based on whether an mcq is correct
+#endif

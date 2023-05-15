@@ -170,6 +170,7 @@ int get_questions(char prog_lang,int seed, int num){
     return 0;
 }
 
+/*
 int main(int num,int seed){
     num = 10;
     seed = 12;
@@ -192,6 +193,7 @@ int main(int num,int seed){
     /*
     * serialising
     */
+    /*
     int length = strlen(sending_txt);
     int digits = floor(log10(length)+1)+1;
     char length_str[digits];
@@ -207,4 +209,4 @@ int main(int num,int seed){
 
     //do something with sending str
     return 0;
-}
+}*/

@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -31,7 +32,7 @@ char* readTextFile(char *path) {
 
 //Returns NULL if lastAttempt = 0, else returns output.
 //Modifies completed to be 1 if succeeded, 0 if not
-char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, char *expectedImage) {
+char** testCode(int *completed, char *path, char *expectedOut, char lastAttempt, char *expectedImage) {
 	int thepipe[2];
 
 	if (pipe(thepipe) != 0) {
@@ -64,7 +65,7 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 				close(thepipe[0]);
 
 				char *imagePath = calloc(strlen("./code/XXXXXX/image.png"), sizeof(char));
-				strndup(imagePath, path, strlen("./code/XXXXXX/"));
+				strncat(imagePath, path, strlen("./code/XXXXXX/"));
 				strcat(imagePath, "image.png");
 				char *outputImage = readTextFile(imagePath);
 
@@ -129,7 +130,7 @@ char** testCode(int *completed, char *path, char *expectedOut, int lastAttempt, 
 
 //Returns 0 if any of the tests fail, 1 otherwise. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
-char** compileCode(int* completed, char* question, char* code, int lastAttempt) {
+char** compileCode(int* completed, char* question, char* code, char lastAttempt) {
 	//Create temporary directory for running question
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
@@ -138,21 +139,21 @@ char** compileCode(int* completed, char* question, char* code, int lastAttempt) 
     if (PROGRAM_MODE == C) {
         vl = "/code.c";
     } else {
-        v1 = "/code.py"
+        vl = "/code.py";
     }
 
     //Create path for the compiled code
-	char *codePath = calloc(strlen("./code/XXXXXX") + strlen(v1) , sizeof(char));
+	char *codePath = calloc(strlen("./code/XXXXXX") + strlen(vl) , sizeof(char));
 
 	strcat(codePath, dirPath);
-    strcat(codePath, v1);
+    strcat(codePath, vl);
 
     //Write the code to file
     int pFd = creat(codePath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); //Error handle here
     write(pFd, code, strlen(code));
     close(pFd);
 
-    if (PROGRAM_MODE == PYTHON) {
+    if (PROGRAM_MODE == C) {
 	    //Get the executable path
 	    char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
 
@@ -222,7 +223,7 @@ char** compileCode(int* completed, char* question, char* code, int lastAttempt) 
 			free(pngPath);
 
 			int ret;
-			char **output = testCode(&ret, execPath, out, lastAttempt, png);
+			char **output = testCode(&ret, codePath, out, lastAttempt, png);
 			
 			//Free provided data
 			free(in);
@@ -233,7 +234,6 @@ char** compileCode(int* completed, char* question, char* code, int lastAttempt) 
 				*completed = 0;
 				closedir(d);
 				unlink(codePath);
-				unlink(execPath);
 				if (lastAttempt == 1) {
 					return output;
 				}
@@ -247,6 +247,5 @@ char** compileCode(int* completed, char* question, char* code, int lastAttempt) 
 
 		closedir(d);
 		unlink(codePath);
-		unlink(execPath);
 		return NULL;
 }

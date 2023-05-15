@@ -13,7 +13,7 @@ char *C_A = "answerset_c.csv"; //qb ans for c
 /*
 * Returns true or false if answer is correct and false otherwise
 */
-bool mcq_correct(char prog_lang,int index,int seed,char*answer){
+bool mcq_correct(char prog_lang, int index,int seed,char*answer){
     int*ids = malloc(index*sizeof(int));
     question_ids(ids,prog_lang,index+1,seed);
     char *sep = ","; //general and ans seperator
@@ -30,6 +30,7 @@ bool mcq_correct(char prog_lang,int index,int seed,char*answer){
         ans_file = C_A;
     }else{
         printf("%s\n","QB language is not supported");
+        //Feels like we shouldn't have to account for this every time, just at the beginning with getopt
         return(1);
     }
 

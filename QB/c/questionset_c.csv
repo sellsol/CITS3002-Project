@@ -5,7 +5,7 @@
 5,2,C is suitable for low-level implementations.,True\;False
 6,4,How are strings represented in C?,string\;ints\;ascii\;array of chars
 7,4,What is the range of values that can be stored by the unsigned char data type?,-128 to 127\;0 to 255\;-256 to 255\;0 to 127
-8,0,Write a function to concat 2 strings in c.
+8,0,Write a function print the first 10 fibonacci numbers.
 9,2,The memory allocation for arrays in c is dynamically allocated.,True\;False
 10,3,What does fopen() function return in c?.,a file pointer\;an integer file descriptor\;a string of data
 11,0,Write a program to reverse a given integer list.
