@@ -15,13 +15,8 @@ extern const int NUM_QAT_STRINGS; //number of string in ques_types_ans string
 
 extern char *PY_Q; //ques for python
 extern char *C_Q; //ques for c
-extern char *PY_A; //ans for python
-extern char *C_A; //ans for c
 
 //questions.c
 extern int question_ids(int*,char,char,int64_t); //a list of question ids
 extern char *a_question(char*,char*,int); //Returns pointer to a questions associated with the question/line id
 extern int get_questions(char,int,int); //a list with 3 strings: questions, types, answers
-
-//mark.c
-extern bool mcq_correct(char,int,int,char*); //returns true or false based on whether an mcq is correct
