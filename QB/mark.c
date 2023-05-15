@@ -1,20 +1,20 @@
 /*
 * Marks mcq questions
 */
-#include "questions.h"
+#include "mark.h"
 
 /*Compile with:
-    cc -o mark questions.c mark.c -lm
+    cc -o mark questions.c pquestions.c mark.c -lm
 */
 
-char *PY_A = "answerset_py.csv"; //qb ans for python
-char *C_A = "answerset_c.csv"; //qb ans for c
+char *PY_A = "python/answerset_py.csv"; //qb ans for python
+char *C_A = "c/answerset_c.csv"; //qb ans for c
 
 /*
 * Returns true or false if answer is correct and false otherwise
 */
-bool mcq_correct(char prog_lang,int index,int seed,char*answer){
-    int*ids = malloc(index*sizeof(int));
+bool question_correct(char*sending_str,char prog_lang,int seed,int index,int lastAttempt,char*answer){
+    int*ids = malloc((index+1)*sizeof(int));
     question_ids(ids,prog_lang,index+1,seed);
     char *sep = ","; //general and ans seperator
 
@@ -25,9 +25,11 @@ bool mcq_correct(char prog_lang,int index,int seed,char*answer){
     if(prog_lang=='p'){
         filename = PY_Q;
         ans_file = PY_A;
+        PROGRAM_MODE = PYTHON;
     }else if(prog_lang == 'c'){
         filename = C_Q;
         ans_file = C_A;
+        PROGRAM_MODE = C;
     }else{
         printf("%s\n","QB language is not supported");
         return(1);
@@ -39,18 +41,22 @@ bool mcq_correct(char prog_lang,int index,int seed,char*answer){
     line=strstr(line,sep);
     line = line + 1;
     char type = line[0];
-    if(type!='m'){
-        perror("not mcq question\n");
-        exit(1);
-    }
+    
+    bool is_correct = false;
 
     char ans_line[BUFSIZ];
+    char**output; //output[0] = expected output, output[1]=answer output
 
-    FILE *fp = fopen(ans_file,"r");
-    bool equal = false;
+    if(type=='0'){ // coding questions
+        int *completed;
+        char*question;
+        sprintf(question,"%d",ids[index]);
 
-    while(fgets(ans_line,sizeof(ans_line),fp) != NULL){
-
+        output = compileCode(completed,question,answer,lastAttempt);
+        if(*completed==1) is_correct = true;
+    }else{ // mcq questions
+        FILE *fp = fopen(ans_file,"r");
+        while(fgets(ans_line,sizeof(ans_line),fp) != NULL){
         int q_ind;
         char*cor_ans = strstr(ans_line,sep);
         char*ind = strndup(ans_line,cor_ans-ans_line);
@@ -59,25 +65,64 @@ bool mcq_correct(char prog_lang,int index,int seed,char*answer){
         cor_ans[strlen(cor_ans)-1]='\0';
 
         //printf("%s,%s\n",ind,cor_ans);
+        output[0] = strdup(cor_ans);
+        output[1] = strdup(answer);
 
-        if(q_ind==ids[index] && strcmp(cor_ans,answer)==0){
-            equal = true;
+        if(q_ind==ids[index]){
+            if(strcmp(cor_ans,answer)==0){
+                is_correct = true;
+            }
             break;
         }
+        fclose(fp);
+        }        
     }
-    fclose(fp);
-    return equal; //re-direct to prog checking if type=='c'
+
+    //for serialisation
+    char *str_sep = "\\;";
+    char *sending_txt = malloc(strlen(output[0])+strlen(output[1])+strlen("t")+(strlen(str_sep)*4));  
+    if(is_correct) strcat(sending_txt,"t");
+    else strcat(sending_txt,"f");
+    strcat(sending_txt,str_sep);
+    if(lastAttempt==1){
+        strcat(sending_txt,output[0]);
+        strcat(sending_txt,str_sep);
+        strcat(sending_txt,output[1]);
+        strcat(sending_txt,str_sep);
+    }
+    
+    /*
+    * serialising
+    */
+    int length = strlen(sending_txt);
+    int digits = floor(log10(length)+1)+1;
+    char length_str[digits];
+    sprintf(length_str,"%d",length);
+    // printf("%s\n",length_str);
+    
+    sending_str = realloc(sending_str,(length+digits+strlen(str_sep)+(BUFSIZ/2)));
+    strncat(sending_str,length_str,digits);
+    strncat(sending_str,str_sep,strlen(str_sep));
+    strncat(sending_str,sending_txt,length);    
+    return is_correct;
 }
 
-// int main(){
-//     int index = 5;
-//     int seed = 12;
-//     char prog_lang = 'p';
-//     char*answer="int";
-//     bool correct = mcq_correct(prog_lang,index,seed,answer);
-//     if(correct){
-//         printf("%s\n","Correct!");
-//     }else{
-//         printf("%s\n","Wrong :(");
-//     }
-// }
+//debugging
+int main(int index,int seed, int last_attempt){
+    index = 5;
+    seed = 12;
+    last_attempt = 1;
+    
+    char prog_lang = 'p';
+    char*answer="int";
+    char*sending_str;
+    bool correct = question_correct(sending_str,prog_lang,index,seed,last_attempt,answer);
+    if(correct){
+        printf("%s\n","Correct!");
+    }else{
+        printf("%s\n","Wrong :(");
+    }
+    printf("\nSending string:\n%s\n",sending_str);
+    return 0;
+    free(sending_str);
+}
