@@ -5,6 +5,7 @@
     <title>Sample Questions</title>
   </head>
   <body>
+    <button id="logout" onclick="logout()">Logout</button>
     <div class="horizontal-container">
       <div class="info-box left">
         <p>Current Finished</p>
@@ -195,7 +196,6 @@
           answer.scrollHeight + "px"; /* adjust the height to fit the content */
       });
 
-
       // Display page when page is loaded
       displayQuestion();
       // Adds listener for submitting answer
@@ -205,6 +205,53 @@
           event.preventDefault();
           submitAnswer();
         });
+
+        function logout() {
+          var cookies = document.cookie.split(';');
+        
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i];
+            var eqPos = cookie.indexOf('=');
+            var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          }
+          window.location.href = "/";
+        }
+
+      // make an AJAX call to authenticate the user's credentials
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/get-data", true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+          var response = JSON.parse(xhr.responseText);
+          console.log(response);
+          if (response.success) {
+            // authentication succeeded, display the question screen
+            username = response.username;
+            questions = response.questions;
+            types = response.types;
+            choices = response.choices;
+            current_finished = response.current_finished;
+            current_marks = response.current_marks;
+            attempts = response.attempts;
+            marks = response.marks;
+
+            console.log(questions);
+            console.log(types);
+            console.log(choices);
+            console.log(current_finished);
+            console.log(current_marks);
+            console.log(attempts);
+            console.log(marks);
+            displayQuestion();
+          } else {
+            // authentication failed, display an error message
+            alert("Invalid username or password.");
+          }
+        }
+      };
+      xhr.send(JSON.stringify({key: "value"}));
     </script>
   </body>
 </html>

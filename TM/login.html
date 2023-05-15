@@ -34,15 +34,10 @@
             if (xhr.status === 200) {
               console.log("200");
               window.location.href = "/";
-            } else if (xhr.status === 401) {
+            } else if (xhr.status === 401) { //TODO: better error
               // invalid
               console.log("401");
               alert("Invalid username or password.");
-            } else if (xhr.status === 303) {
-              console.log("303");
-              console.log("Redirect");
-              // redirect response, update window location
-              window.location.href = "/";
             }
           }
         };
