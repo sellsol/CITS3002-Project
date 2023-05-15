@@ -18,21 +18,21 @@ char* readTextFile(char *path) {
 	stat(path, buf); //Need to error handle
 	int size = buf->st_size;
 
-	char *out = malloc(size); //Need to really make sure this works Feels like I should add 1
+	char *out = malloc(size + 1); //Need to really make sure this works Feels like I should add 1
 	int oFd = open(path, O_RDONLY);
 	int got = read(oFd, out, size);
 	while (got < size) {
 		got += read(oFd, out + got, size - got);
 	}
 
-	out[got - 1] = '\0';
+	out[got] = '\0';
 
 	return out;
 }
 
 //Returns NULL if lastAttempt = 0, else returns output.
 //Modifies completed to be 1 if succeeded, 0 if not
-char** testCode(int *completed, char *path, char *expectedOut, char lastAttempt, char *expectedImage) {
+char** testCode(char *completed, char *path, char *expectedOut, char lastAttempt, char *expectedImage) {
 	int thepipe[2];
 
 	if (pipe(thepipe) != 0) {
@@ -84,19 +84,21 @@ char** testCode(int *completed, char *path, char *expectedOut, char lastAttempt,
 			//Else it's some text response, so we check as shown below
 
 			//Initialise variables
-			int expectedLen = strlen(expectedOut) + 1;
+			int expectedLen = 10000; //Not allowed to have 10000 or more chars
 			char *output = malloc(expectedLen);
 
 			//Read from the pipe until we are finished or we have read more data than we were expecting
 			int pos = 0;
 			int got = read(thepipe[0], output, expectedLen);
-			while (got != 0 || pos > expectedLen) {
+			while (got != 0 || pos == expectedLen) {
 				pos += got;
 				got = read(thepipe[0], output + pos, expectedLen - pos);
 			}
+			output[pos] = '\0';
 			wait(NULL);
 			close(thepipe[0]);
 			
+			printf("%i, %i\n", pos, expectedLen);
 			//We got more input than we were expecting, return failure
 			if (pos > expectedLen) {
 				*completed = 0;
@@ -104,6 +106,7 @@ char** testCode(int *completed, char *path, char *expectedOut, char lastAttempt,
 					// concat ... and then we stopped reading to the end of this
 					char **r = malloc(2 * sizeof(char *));
 					r[0] = expectedOut;
+					printf("%s\n", r[0]);
 					r[1] = output;
 					return r;
 				}
@@ -120,6 +123,7 @@ char** testCode(int *completed, char *path, char *expectedOut, char lastAttempt,
 				char **r = malloc(2 * sizeof(char *));
 				r[0] = expectedOut;
 				r[1] = output;
+				printf("%s\n", output);
 				return r;
 			}
 
@@ -130,7 +134,7 @@ char** testCode(int *completed, char *path, char *expectedOut, char lastAttempt,
 
 //Returns 0 if any of the tests fail, 1 otherwise. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
-char** compileCode(int* completed, char* question, char* code, char lastAttempt) {
+char** compileCode(char* completed, char* question, char* code, char lastAttempt) {
 	//Create temporary directory for running question
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
@@ -167,6 +171,7 @@ char** compileCode(int* completed, char* question, char* code, char lastAttempt)
             default:
                 wait(NULL);
         }
+		unlink(codePath);
         free(codePath);
         codePath = execPath;
     }
@@ -175,6 +180,7 @@ char** compileCode(int* completed, char* question, char* code, char lastAttempt)
 	strcat(questionPath, "./progq/");
 	strcat(questionPath, question);
 	strcat(questionPath, "/");
+
 	//Open relevant folder, start running all tests
 	DIR *d = opendir(questionPath);
 
@@ -197,6 +203,8 @@ char** compileCode(int* completed, char* question, char* code, char lastAttempt)
 			strcat(outPath, dir->d_name);
 			strcat(outPath, "/out");
 
+			printf("%s\n", outPath);
+
 			strcat(pngPath, questionPath);
 			strcat(pngPath, dir->d_name);
 			strcat(pngPath, "/png");
@@ -205,6 +213,10 @@ char** compileCode(int* completed, char* question, char* code, char lastAttempt)
 			char *in = NULL;
 			if (access(inPath, F_OK) == 0) {
 				in = readTextFile(inPath);
+				//Handle reading input file
+				//Count all the instances of '\n'
+				//Create array with count + 1
+				//strtok all values to array
 			}
 
 			char *png = NULL;
@@ -222,12 +234,12 @@ char** compileCode(int* completed, char* question, char* code, char lastAttempt)
 			free(outPath);
 			free(pngPath);
 
-			int ret;
+			char ret;
 			char **output = testCode(&ret, codePath, out, lastAttempt, png);
-			
+			printf("%s\n", output[1]);
+
 			//Free provided data
 			free(in);
-			free(out);
 			free(png);
 
 			if (ret == 0) {
@@ -238,9 +250,11 @@ char** compileCode(int* completed, char* question, char* code, char lastAttempt)
 					return output;
 				}
 
+				free(out);
 				free(output);
 				return NULL;
 			}
+			free(out);
 		}
 
 		*completed = 1;

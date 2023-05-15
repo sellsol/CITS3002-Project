@@ -46,9 +46,7 @@ char* recvAll(int s) {
 	}
 	char *out = malloc(len); //Error handle here
 	//len = ntohl(len); Don't know what beej was thinking, this shit just breaks everything
-	int cpy = len;
 	
-	int total = 0;
 	char *b = out;
 
 	while (len > 0) {
@@ -133,22 +131,46 @@ int main(int argc, char **argv) {
 			}
 			//printf("%i\n");		
 		} else if (out[0] == 'C') { //Check questions
+
+			//Disects request data
 			char questionIndex = out[1];
 			int64_t seed;
 			memcpy(&seed, out + 2, sizeof(int64_t));
 			char lastAttempt = out[10];
 			char *answer = out + 11;
 
-			int *ids = malloc(questionIndex * sizeof(int));
-			int val = question_ids(ids, 'c', (char)(questionIndex + 1), seed);
+			printf("Request to check questions with data %d, %016llX, %d, %s\n", questionIndex, &seed, lastAttempt, answer);
 
+			//Get the question id
+			int *ids = malloc(questionIndex * sizeof(int));
+			int val = question_ids(ids, 'c', questionIndex + 1, seed);
+
+			printf("Marking question %i...\n", ids[questionIndex]);
+
+			//Gets the question file name
 			char* line = a_question(line, C_Q, ids[questionIndex]);
 			char* fileName = strtok(line, ",");
 
-			int completed;
+			//Compile and test code
+			char completed;
 			char** ret = compileCode(&completed, fileName, answer, lastAttempt);
 
-			//printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
+			//Send response back
+			if (completed == 0) {
+				char *msg = calloc(1 + strlen(ret[0]) + 3 + strlen(ret[1]), sizeof(char));
+				msg[0] = completed;
+				strcat(msg + 1, ret[0]);
+				strcat(msg, ";");
+				strcat(msg, ret[1]);
+				int thing = strlen(msg);
+				sendAll(sockfd, msg, &thing);
+			} else {
+				printf("CORRECT\n");
+				int thing = 1;
+				sendAll(sockfd, &completed, &thing);
+			}
+
+
 		} else {
 			//?????
 			printf("Unknown request\n");

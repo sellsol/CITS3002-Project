@@ -9,3 +9,5 @@
 9,2,The memory allocation for arrays in c is dynamically allocated.,True\;False
 10,3,What does fopen() function return in c?.,a file pointer\;an integer file descriptor\;a string of data
 11,0,Write a program to reverse a given integer list.
+12,0,Write a program to print 1+1 in c.
+13,0,Write a program to make a gradient image in python

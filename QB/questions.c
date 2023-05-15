@@ -62,8 +62,8 @@ char *a_question(char*line,char *filename,int line_index){
 
     int line_num = 0;
 
-    char buffer[MAX_LINE_LEN];
-    while(fgets(buffer,sizeof(buffer),fp) != NULL && line_index!=line_num){
+    char *buffer = malloc(MAX_LINE_LEN);
+    while(fgets(buffer,MAX_LINE_LEN,fp) != NULL && line_index!=line_num){
         ++line_num;
         if(line_num==line_index) break;
     }
