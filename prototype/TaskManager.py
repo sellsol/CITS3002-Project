@@ -16,24 +16,21 @@ conn, addr = s.accept()
 
 print(f"Connected by {addr}")
 
-def SendMessage(s, data):
-    s.sendall(struct.pack("i", len(data)) + bytes(data, "utf-8")); #Sends length of data then data
-    
-def GenQuestionRequest(s, numQuestions, seed):
+def CheckAnswerRequest(s, seedIndex, seed, last_attempt, student_answer):
+    s.sendall((struct.pack("i", 11 + len(student_answer)) + b'C'
+        + struct.pack("c", seedIndex.to_bytes(1, 'big')) + struct.pack("q", seed)
+        + struct.pack("c", last_attempt.to_bytes(1, 'big')) + bytes(student_answer, "utf-8")))
 
-    s.sendall(struct.pack("i", 10) + b'G' + struct.pack("c", numQuestions.to_bytes(1, 'big')) + struct.pack("q", seed))
-    
-
-
-strs = hash("ASD")
-print(strs)
-GenQuestionRequest(conn, 4, strs)
+f = open("../QB/c/sample_answers/1/sample.c")
+text = f.read()
+f.close()
+CheckAnswerRequest(conn, 3, 1231, 1, text)
 
 while True:
     data = conn.recv(1024)
     if not data:
         break
-    print(data)
+    print(data[1])
 
 conn.close()
 s.close()

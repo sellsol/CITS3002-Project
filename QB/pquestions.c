@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -7,11 +8,32 @@
 #include <string.h>
 #include <wait.h>
 #include <sys/stat.h>
+#include <ftw.h>
 
 #include "mode.h"
 
-//TODO: Fix perror messages? They're kind of bland right now.
+int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+	if (fpath == "./code/code.c" || fpath == "./code" || fpath == "./code.py") {
+		return 0;
+	}
+	int rv = remove(fpath);
 
+	if (rv) {
+		perror(fpath);
+	}
+
+	return rv;
+}
+
+int unlink_cb2(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+	int rv = remove(fpath);
+
+	if (rv) {
+		perror(fpath);
+	}
+
+	return rv;
+}
 //Reads text file to string and returns pointer to string. Pointer must be freed after use.
 char* readTextFile(char *path) {
 	struct stat *buf = malloc(sizeof(struct stat));
@@ -32,7 +54,7 @@ char* readTextFile(char *path) {
 
 //Returns NULL if lastAttempt = 0, else returns output.
 //Modifies completed to be 1 if succeeded, 0 if not
-char** testCode(char *completed, char *path, char *expectedOut, char lastAttempt, char *expectedImage) {
+char** testCode(char *completed, char *path, char lastAttempt, char **in, char *expectedOut, char *expectedImage) {
 	int thepipe[2];
 
 	if (pipe(thepipe) != 0) {
@@ -50,9 +72,9 @@ char** testCode(char *completed, char *path, char *expectedOut, char lastAttempt
 
 			close(thepipe[1]);
             if (PROGRAM_MODE == C) {
-			    execl(path, "code", (char *) NULL);
+			    execv(path, in);
             } else {
-                execl("/usr/bin/python3", "/usr/bin/python3", path, (char *) NULL);
+                execv("/usr/bin/python3", in);
             }
 			//Should probably use execv for multiple parameters
 			perror("User program crashed");
@@ -98,7 +120,6 @@ char** testCode(char *completed, char *path, char *expectedOut, char lastAttempt
 			wait(NULL);
 			close(thepipe[0]);
 			
-			printf("%i, %i\n", pos, expectedLen);
 			//We got more input than we were expecting, return failure
 			if (pos > expectedLen) {
 				*completed = 0;
@@ -106,7 +127,6 @@ char** testCode(char *completed, char *path, char *expectedOut, char lastAttempt
 					// concat ... and then we stopped reading to the end of this
 					char **r = malloc(2 * sizeof(char *));
 					r[0] = expectedOut;
-					printf("%s\n", r[0]);
 					r[1] = output;
 					return r;
 				}
@@ -123,7 +143,6 @@ char** testCode(char *completed, char *path, char *expectedOut, char lastAttempt
 				char **r = malloc(2 * sizeof(char *));
 				r[0] = expectedOut;
 				r[1] = output;
-				printf("%s\n", output);
 				return r;
 			}
 
@@ -203,20 +222,56 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			strcat(outPath, dir->d_name);
 			strcat(outPath, "/out");
 
-			printf("%s\n", outPath);
+			//printf("%s\n", outPath);
 
 			strcat(pngPath, questionPath);
 			strcat(pngPath, dir->d_name);
 			strcat(pngPath, "/png");
 
 			//Get input file if it exists
-			char *in = NULL;
+			char **inArgs = NULL;
 			if (access(inPath, F_OK) == 0) {
-				in = readTextFile(inPath);
+				printf("READING INPUT...\n");
+				char *in = readTextFile(inPath);
 				//Handle reading input file
+
 				//Count all the instances of '\n'
+				int len = strlen(in);
+				int count = 1;
+				for (int i = 0; i < len; i++) {
+					if (in[i] == '\n') {
+						count += 1;
+					}
+				}
+
+				if (PROGRAM_MODE == PYTHON) {
+					count += 2;
+				} else {
+					count += 1;
+				}
+				
+
 				//Create array with count + 1
+				char **inArgs = malloc((count + 1) * sizeof(char *));
+
+				int i = 1;
+				if (PROGRAM_MODE == PYTHON) {
+					inArgs[0] = "/usr/bin/python3";
+					inArgs[1] = codePath;
+					i = 2;
+				} else {
+					inArgs[0] = "code";
+				}
+				printf("%i\n", count + 1);
 				//strtok all values to array
+				char *token = strtok(in, "\n");
+				while (token != NULL) {
+					inArgs[i] = token;
+					i += 1;
+					token = strtok(NULL, "\n");
+				}
+				inArgs[count] = NULL;
+				free(in);
 			}
 
 			char *png = NULL;
@@ -235,17 +290,20 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			free(pngPath);
 
 			char ret;
-			char **output = testCode(&ret, codePath, out, lastAttempt, png);
-			printf("%s\n", output[1]);
+			printf("TESTING...\n");
+			char **output = testCode(&ret, codePath, lastAttempt, inArgs, out, png);
+			nftw(dirPath, unlink_cb2, 64, FTW_DEPTH | FTW_PHYS);
+			//printf("%s\n", output[1]);
 
 			//Free provided data
-			free(in);
+			//free(in);
 			free(png);
 
 			if (ret == 0) {
 				*completed = 0;
 				closedir(d);
 				unlink(codePath);
+				nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
 					return output;
 				}
@@ -261,5 +319,6 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 
 		closedir(d);
 		unlink(codePath);
+		nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 		return NULL;
 }

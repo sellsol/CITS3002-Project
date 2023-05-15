@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 			int val = question_ids(ids, 'c', numQuestions, seed);
 			
 			for (char i = 0; i < numQuestions; i++) {
-				printf("%i\n", ids[i]);
+				printf("Question id: %i\n", ids[i]);
 			}
 			//printf("%i\n");		
 		} else if (out[0] == 'C') { //Check questions
@@ -163,6 +163,7 @@ int main(int argc, char **argv) {
 				strcat(msg, ";");
 				strcat(msg, ret[1]);
 				int thing = strlen(msg);
+				printf("WRONG: SENDING %s\n", msg);
 				sendAll(sockfd, msg, &thing);
 			} else {
 				printf("CORRECT\n");

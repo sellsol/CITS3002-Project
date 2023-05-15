@@ -1,4 +1,4 @@
-1,0,Write a program to print 1+1 in c.
+1,0,Write a C program to print the length of all it's inputs.
 2,4,What is 1+1?,1\;2\;3\;4
 3,4,What is size of int on a 32 bit device?,10\;8\;4\;1
 4,3,Which is the wrong way to initialise a string with 8 characters?,char s[8]="a string"\;char s[]="a string"\;const char* s = "a string"
