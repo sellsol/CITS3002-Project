@@ -166,19 +166,29 @@
           .mcq-choice {
             padding: 10px;
           }
+
           #username-header {
             margin-right: 4rem;
           }
-          
+
+          #submitted-answer {
+            color: red;
+          }
+
+          #correct-answer {
+            color: green;
+          }
           
         </style>
   </head>
   <body>
+    <!-- Logout -->
     <div class="horizontal-container">
       <h1 id="username-header"></h1>
       <button id="logout" onclick="logout()">Logout</button>
     </div>
 
+    <!-- Stats -->
     <div class="horizontal-container">
       <div class="info-box">
         <p>Current Finished</p>
@@ -197,6 +207,8 @@
         <p id="marks"></p>
       </div>
     </div>
+
+    <!-- Question Number -->
     <div class="horizontal-container">
       <h2 id="question-number"></h2>
       <h2>. </h2>
@@ -222,6 +234,15 @@
     </form>
 
     <br />
+
+    <!-- Correct Answer -->
+    <div id="answer-displayer">
+      <p id="submitted-answer"></p>
+      <p id="correct-answer"></p>
+    </div>
+
+
+    <!-- Back & Next Buttons -->
     <div class="horizontal-container">
       <button id="back" onclick="previousQuestion()">Back</button>
       <button id="next" onclick="nextQuestion()">Next</button>
@@ -241,16 +262,12 @@
 
       // Adds things to screen
       function displayQuestion() {
-        document.getElementById("question-number").innerHTML =
-          currentQuestion + 1;
-        document.getElementById("question").innerHTML =
-          questions[currentQuestion];
+        document.getElementById("question-number").innerHTML = currentQuestion + 1;
+        document.getElementById("question").innerHTML = questions[currentQuestion];
         document.getElementById("username-header").innerHTML = username;
-        document.getElementById("current-finished").innerHTML =
-          current_finished;
+        document.getElementById("current-finished").innerHTML = current_finished;
         document.getElementById("current-marks").innerHTML = current_marks;
-        document.getElementById("attempts").innerHTML =
-          attempts[currentQuestion];
+        document.getElementById("attempts").innerHTML = attempts[currentQuestion];
         document.getElementById("marks").innerHTML = marks[currentQuestion];
         console.log(username);
         if (types[currentQuestion] == "c") {
@@ -313,9 +330,18 @@
               var response = JSON.parse(xhr.responseText);
               if (response.correct) {
                 correct();
-              } else {
-                incorrect();
+              } 
+              else if (response.answer == "") {
+                incorrect("", "");
               }
+              else if (types[currentQuestion] == "c") {
+                incorrect(response.answer, answer);
+              }
+              else if (types[currentQuestion] == "m") {
+                incorrect(response.answer, choices[currentQuestion][answer]);
+              }
+
+                
               // Handle the response from the server here
               displayQuestion();
               console.log(xhr.responseText);
@@ -340,6 +366,8 @@
       // Change to previous question
       function previousQuestion() {
         if (currentQuestion > 0) {
+          document.getElementById("correct-answer").textContent = "";
+          document.getElementById("submitted-answer").textContent = "";
           currentQuestion--;
           displayQuestion();
         }
@@ -348,6 +376,8 @@
       // Change to next question
       function nextQuestion() {
         if (currentQuestion < questions.length - 1) {
+          document.getElementById("correct-answer").textContent = "";
+          document.getElementById("submitted-answer").textContent = "";
           currentQuestion++;
           displayQuestion();
         }
@@ -360,7 +390,9 @@
         current_marks += marks[currentQuestion];
       }
 
-      function incorrect() {
+      function incorrect(correctAnswer, submittedAnswer) {
+        document.getElementById("correct-answer").textContent = correctAnswer;
+        document.getElementById("submitted-answer").textContent = submittedAnswer;
         attempts[currentQuestion]++;
         if (attempts[currentQuestion] == 3) current_finished++;
       }

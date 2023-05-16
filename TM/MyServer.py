@@ -78,8 +78,8 @@ class MyServer(BaseHTTPRequestHandler):
             print("\tAnswer: " + answer)
             self.send_response(200)
             self.end_headers()
-            
-            response = {"success": True, "correct": check_answer(username, int(pos), answer, int(attempts))} 
+            correct, correct_answer = check_answer(username, int(pos), answer, int(attempts))
+            response = {"success": True, "correct": correct, "answer": correct_answer}
             self.wfile.write(json.dumps(response).encode("utf-8"))
         elif self.path == "/get-data":
             cookie = SimpleCookie(self.headers.get("Cookie"))

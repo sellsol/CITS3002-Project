@@ -59,9 +59,11 @@ def get_answers(username):
 # checks the given answers to a question and updates progress
 def check_answer(username, question_index, student_answer, attempts):
     # calls the relevant QB and asks to check
+    
     is_last_attempt = attempts == 2
     portnum, q_index = q_to_qb(question_index)
 
+    print(QB_check_question(username, portnum, q_index, student_answer, is_last_attempt))
     return QB_check_question(username, portnum, q_index, student_answer, is_last_attempt)
 
 
@@ -137,9 +139,9 @@ def QB_get_questions(portnum, num_qs, seed):
     return questions
 
 # PLACEHOLDER func that checks an answer with a QB
-def QB_check_question(username, portnum, q_index, is_last_attempt, student_answer):    
+def QB_check_question(username, portnum, q_index, student_answer, is_last_attempt):    
     if is_last_attempt:
         # return in form is_correct, student_output, sample_output
-        return False#, student_answer, "placeholder checked_output"
+        return False, "U suck lol"#, student_answer, "placeholder checked_output"
     else:
-        return False
+        return False, "" #empty
