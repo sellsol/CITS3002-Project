@@ -337,7 +337,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			struct FileData output = testCode(&ret, lastAttempt, inArgs, out.data, png);
 
 			chdir("../..");
-			//nftw(dirPath, testUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+			nftw(dirPath, testUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 
 			//Free provided data
 			//free(in);
@@ -351,7 +351,6 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 					struct FileData *r = malloc(2 * sizeof(struct FileData));
 					r[0] = out;
 					r[1] = output;
-					//memcpy(r[1], &output, sizeof(struct FileData));
 					return r;
 				}
 
@@ -367,6 +366,6 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 
 		closedir(d);
 		unlink(codePath);
-		//nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+		nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 }
