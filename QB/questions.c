@@ -145,6 +145,8 @@ int get_questions(char prog_lang,int seed, int num){
         ++i;
     }
 
+    free(ids);
+
     ques_types_ans[0] = strdup(questions);
     ques_types_ans[1] = strdup(types);
     ques_types_ans[2] = strdup(answers);
@@ -157,6 +159,8 @@ char* genQuestionsReply(int numQuestions, int seed) {
 
     char *sending_txt = malloc(BUFSIZ);
     sprintf(sending_txt, "%s%s%s", ques_types_ans[0], ques_types_ans[1], ques_types_ans[2]);
+
+    free(ques_types_ans);
 
     return sending_txt;
 }
