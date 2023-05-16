@@ -9,6 +9,7 @@ sel = selectors.DefaultSelector()
 data_to_send = Queue()
 data_received = Queue()
 qbs = Queue()
+waiting_reconnect = False
 
 # starts the socket server, runs forever
 def StartServer(stop):
@@ -40,8 +41,23 @@ def StartServer(stop):
 # accept an incoming connection from a socket, registering into selector
 def AcceptConnection(s):
     conn, addr = s.accept()
-    print(f"Connected to {addr}, id {len(list(qbs.queue))}")
-    qbs.put(addr)
+    
+    global waiting_reconnect
+    if waiting_reconnect:
+        for qb in list(qbs.queue):
+            if qb == None:
+                qbs.get()
+                qbs.put(addr)
+                print(f"Connected to {addr}")
+                if None not in list(qbs.queue):
+                    waiting_reconnect = False
+            else:
+                qbs.get()
+                qbs.put(qb)
+    else:
+        qbs.put(addr)
+        print(f"Connected to {addr}")
+
     conn.setblocking(False)
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
@@ -64,13 +80,15 @@ def ServiceConnection(key, mask):
             sel.unregister(sock)
             sock.close()
             
-            new_qbs = Queue()
+            global waiting_reconnect
+            waiting_reconnect = True
             for qb in list(qbs.queue):
-                if qb[0] == data.addr:
-                    continue
+                if qb == data.addr:
+                    qbs.get()
+                    qbs.put(None)
                 else:
-                    new_qbs.put(qb)
-            qb = new_qbs   
+                    qbs.get()
+                    qbs.put(qb)
     if mask & selectors.EVENT_WRITE:  
         # socket is ready to write to          
         if not data_to_send.empty() and list(data_to_send.queue)[0][0] == key.data.addr:
@@ -132,4 +150,12 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 print(f"Received data from {addr}")    
                 
                 # deserialise reply TBC
+                print(data_received).get()[1].decode('utf-8')
                 return data_received.get()[1].decode('utf-8')
+            
+def test_ready():
+    qbs_ready = 0
+    for qb in list(qbs.queue):
+        if qb != None:
+            qbs_ready += 1
+    return qbs_ready == num_qbs

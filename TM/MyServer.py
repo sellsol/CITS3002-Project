@@ -1,4 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.cookies import SimpleCookie
 from urllib.parse import unquote
 import json
 from config import *
@@ -12,12 +13,24 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
+            cookie = SimpleCookie(self.headers.get("Cookie"))
+            username = cookie.get("username")
                         
-            with open("index.html", "r") as f:
-                html = f.read()
-                self.wfile.write(bytes(html, "utf-8"))
-        #elif self.path == "/answers":
-            #TODO: send response from tm
+            if not test_ready():
+                print("student connected while test not ready")
+                with open("qb_error.html", "r") as f:
+                    html = f.read()
+                    self.wfile.write(bytes(html, "utf-8"))
+            elif username is None:
+                print("unlogged in student connected")
+                with open("login.html", "r") as f:
+                    html = f.read()
+                    self.wfile.write(bytes(html, "utf-8"))
+            else:
+                print("student logged in")
+                with open("questions.html", "r") as f:
+                    html = f.read()
+                    self.wfile.write(bytes(html, "utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -32,27 +45,34 @@ class MyServer(BaseHTTPRequestHandler):
             password = data["password"]
             
             if validate_student(loginFile ,username, password):
-                questions, types, choices = get_questions(username)
-                current_finished, current_marks, attempts, marks = get_answers(username)
-                
                 print("\tLogged in: " + username)
-                
+                                
+                cookie = SimpleCookie()
+                cookie["username"] = username
+                cookie["username"]["path"] = "/"
+                cookie["username"]["max-age"] = 3600
+                                
                 self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
-                #questions_json = json.dumps(questions)
-                
-                # Send success and questions data
-                response = {"success": True, "questions": questions, "types": types, 
-                            "choices": choices, "current_finished": current_finished, 
-                            "current_marks": current_marks, "attempts": attempts, "marks": marks}
-                self.wfile.write(json.dumps(response).encode("utf-8"))
+                self.send_header("Location", "/")
+                self.send_header("Set-Cookie", cookie.output(header=""))
+                self.end_headers() 
             else:
-                self.send_response(200)
+                self.send_response(401)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False}).encode("utf-8"))
-                
+        elif self.path == "/get-data":
+            cookie = SimpleCookie(self.headers.get("Cookie"))
+            username = cookie.get("username")
+            self.send_response(200)
+            self.send_header("Content-types", "application/json")
+            self.end_headers()
+            questions, types, choices = get_questions(username.value)
+            current_finished, current_marks, attempts, marks = get_answers(username.value)
+            response = {"success": True, "username": username.value, "questions": questions, "types": types, 
+                        "choices": choices, "current_finished": current_finished, 
+                        "current_marks": current_marks, "attempts": attempts, "marks": marks}
+            self.wfile.write(json.dumps(response).encode("utf-8"))
         elif self.path == "/submit-answer":
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
@@ -60,7 +80,6 @@ class MyServer(BaseHTTPRequestHandler):
             username, answer, pos, attempts = data.split(":")
             answer = unquote(answer)
             
-            # TODO: Do something with this data
             print("\tUsername: " + username)
             print("\tQuestion Index: " + pos)
             print("\tAnswer: " + answer)
