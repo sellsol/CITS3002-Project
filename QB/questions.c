@@ -13,16 +13,14 @@ const int MIN_LINE_INDEX = 1; //lowest line number in QB
 const int MAX_LINE_LEN = 500; //max length of a line in question set
 const int NUM_QAT_STRINGS = 3; //number of string in ques_types_ans string
 
-char *PY_Q = "python/questionset_py.csv"; //qb ques for python
-char *C_Q = "c/questionset_c.csv"; //qb ques for c
-
+char *PY_Q = "python/questionset_py.csv"; //ques for python
+char *C_Q = "c/questionset_c.csv"; //ques for c
 
 /*
 * Returns a list of question ids
 * The seed is the unique int that is associated with the string
 */
-int question_ids(int*ids, int num, uint32_t seed){
-
+int question_ids(int *ids, char prog_lang, char num, int64_t seed){
     //generating question ids for 
     srand(seed);
 
@@ -75,9 +73,9 @@ char *a_question(char*line,char *filename,int line_index){
 /*
 * modifies sending string to have the fully serialised string with questions,types,answers
 */
-int get_questions(char*sending_str,uint32_t seed, int num){
+char **ques_types_ans; //pointer to question, types, and answer 
+int get_questions(char prog_lang, int64_t seed, int num){
 
-    char **ques_types_ans; //pointer to question, types, and answer 
     ques_types_ans = realloc(ques_types_ans, (NUM_QAT_STRINGS + 1) * sizeof(ques_types_ans[0]));
 
     int*ids = malloc(num*sizeof(int));
@@ -90,7 +88,7 @@ int get_questions(char*sending_str,uint32_t seed, int num){
     char *sep = ","; //general csv seperator
 
     char *filename;
-    if(PROGRAM_MODE==PYTHON){
+    if(prog_lang=='p'){
         filename = PY_Q;
     }else{
         filename = C_Q;
@@ -130,92 +128,35 @@ int get_questions(char*sending_str,uint32_t seed, int num){
         // printf("%s\n",ans);
 
         //adding substrings to respective strings
-        if(type=='0'){
+        if(type=='c'){
             strncat(questions,ques,strlen(ques)-1);//removing trailing \n for coding ques
-        }else {strncat(questions,ques,strlen(ques));}
-        if(type!= '0'){
-            strncat(answers,ans,strlen(ans)-1); //removing trailing \n for mcq answers
         }
-        strncat(types,&type,1);
-
-        //adding seperators
-
-        // if(i!=num-1){ //last entry does not have question seperator
+        else {
+            strncat(questions,ques,strlen(ques));
+        }
         strncat(questions,q_sep,strlen(q_sep));
-        if(type!='0'){ //no seperators together
+
+        if(type!= 'c'){
+            strncat(answers,ans,strlen(ans)-1); //removing trailing \n for mcq answers
             strncat(answers,q_sep,strlen(q_sep));
-        } 
+        }
+
+        strncat(types,&type,1);
+        strncat(types, q_sep, strlen(q_sep));
+
         ++i;
     }
-
-    strncat(types,q_sep,strlen(q_sep));
 
     ques_types_ans[0] = strdup(questions);
     ques_types_ans[1] = strdup(types);
     ques_types_ans[2] = strdup(answers);
 
-    // printf("%s\n",ques_types_ans[1]);
-    // printf("%s\n",ques_types_ans[0]);
-    // printf("%s\n",ques_types_ans[2]);
-
-    /*
-    * Serialising
-    */
-    char *sending_txt = malloc(strlen(ques_types_ans[0])+strlen(ques_types_ans[1])+strlen(ques_types_ans[2]));
-    memcpy(sending_txt,ques_types_ans[0],strlen(ques_types_ans[0]));
-    memcpy(sending_txt+strlen(ques_types_ans[0]),ques_types_ans[1],strlen(ques_types_ans[1]));
-    memcpy(sending_txt+strlen(ques_types_ans[0])+strlen(ques_types_ans[1]),ques_types_ans[2],strlen(ques_types_ans[2]));
-
-    int length = strlen(sending_txt);
-    int digits = floor(log10(length)+1)+1;
-    char length_str[digits];
-    sprintf(length_str,"%d",length);
-    // printf("%s\n",length_str);
-
-    char* sep = "\\;";
-    char* sending_str = (char*)realloc(sending_str,length+digits+strlen(sep)+(BUFSIZ/2));
-    strncat(sending_str,length_str,digits);
-    strncat(sending_str,sep,strlen(sep));
-    strncat(sending_str,sending_txt,length);
-
     return 0;
 }
 
-// int main(int num,int64_t seed){
-//     num = 10;
-//     seed = 12;
-    
-//     int ques = get_questions(seed,num);
-//     // printf("Questions:\n%s\n",ques_types_ans[0]);
-//     // printf("Types:\n%s\n",ques_types_ans[1]);
-//     // printf("Answers:\n%s\n",ques_types_ans[2]);
+char* genQuestionsReply(int numQuestions, int seed) {
+    int ques = get_questions(prog_lang, seed, numQuestions);
 
-//     char *sending_txt = malloc(strlen(ques_types_ans[0])+strlen(ques_types_ans[1])+strlen(ques_types_ans[2]));
-//     memcpy(sending_txt,ques_types_ans[0],strlen(ques_types_ans[0]));
-//     memcpy(sending_txt+strlen(ques_types_ans[0]),ques_types_ans[1],strlen(ques_types_ans[1]));
-//     memcpy(sending_txt+strlen(ques_types_ans[0])+strlen(ques_types_ans[1]),ques_types_ans[2],strlen(ques_types_ans[2]));
-
-//     // strncat(sending_txt,ques_types_ans[0],strlen(ques_types_ans[0]));
-//     // strncat(sending_txt,ques_types_ans[1],strlen(ques_types_ans[1]));
-//     // strncat(sending_txt,ques_types_ans[2],strlen(ques_types_ans[2]));
-//     //printf("\nSending text:\n%s\n",sending_txt);
-
-//     /*
-//     * serialising
-//     */
-//     int length = strlen(sending_txt);
-//     int digits = floor(log10(length)+1)+1;
-//     char length_str[digits];
-//     sprintf(length_str,"%d",length);
-//     // printf("%s\n",length_str);
-
-//     char *sep = "\\;";
-//     char sending_str[length+digits+strlen(sep)+(BUFSIZ/2)];
-//     strncat(sending_str,length_str,digits);
-//     strncat(sending_str,sep,strlen(sep));
-//     strncat(sending_str,sending_txt,length);
-//     printf("\nSending string:\n%s\n",sending_str);
-
-//     //do something with sending str
-//     return 0;
-// }
+    char *sending_txt = malloc(BUFSIZ);
+    sprintf(sending_txt, "%s%s%s", ques_types_ans[0], ques_types_ans[1], ques_types_ans[2]);
+}

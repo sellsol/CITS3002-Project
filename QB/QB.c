@@ -12,10 +12,7 @@
 #include <errno.h>
 
 #include "questions.h"
-#include "questions.c"
-#include "mode.h"
-
-enum PROGRAM PROGRAM_MODE = NONE;
+char prog_lang;
 
 //sendAll Shamelessly stolen from beej's guide to networking
 int sendAll(int s, char *buf, int *len) {
@@ -63,31 +60,16 @@ char* recvAll(int s) {
 	return out;
 }
 
-int main(int argc, char **argv) {
-	PROGRAM_MODE = NONE;
-	int c;
-	while ((c = getopt(argc, argv, "cp:")) != -1) {
-		switch (c) {
-			case 'c':
-				if (PROGRAM_MODE == NONE) {
-					PROGRAM_MODE = C;
-					break;
-				} else {
-					return 1;
-				}
-			case 'p':
-				if (PROGRAM_MODE == NONE) {
-					PROGRAM_MODE = PYTHON;
-					break;
-				} else {
-					return 1;
-				}
-			case '?':
-				//Handle appropriately
-			default:
-				abort();
-		}
+int main(int argc, char *argv[]) {
+	if (argc != 2) {
+		printf("error: wrong number of parameters\n");
+		exit(0);
 	}
+	prog_lang = argv[1][0];
+    if(prog_lang != 'c' && prog_lang != 'p'){
+        printf("QB does not exist - choose from 'c' and 'p'\n");
+        exit(0);
+    }
 
 	int status, sockfd;
 	struct addrinfo hints, *res;
@@ -118,38 +100,44 @@ int main(int argc, char **argv) {
 	char *out;
 	while (len != -1) {
 		out = recvAll(sockfd);
-
-		if (out[0] == 'G') { //Generate questions
+		
+		if (strlen(out) == 0) {
+			printf("Connection to server lost.\n");
+			printf("Exiting program, rerun to reconnect\n");
+			close(sockfd);
+			free(out);
+			freeaddrinfo(res);
+			return(0);
+		} 
+		else if (out[0] == 'G') { //Generate questions
 			char numQuestions = out[1];
 			int64_t seed;
 			memcpy(&seed, out + 2, sizeof(int64_t));
-			
-			//printf("Generate request %d, %016llX\n", numQuestions, &seed);
-			int *ids = malloc(numQuestions * sizeof(int));
-			int val = question_ids(ids, 'c', numQuestions, seed);
-			
-			for (char i = 0; i < numQuestions; i++) {
-				printf("%i\n", ids[i]);
-			}
-			//printf("%i\n");		
-		} else if (out[0] == 'C') { //Check questions
+			printf("num questions = %i, seed = %li\n", numQuestions, seed);//intesting
+		
+			char *buf = genQuestionsReply(numQuestions, seed);
+			int length = strlen(buf);
+			sendAll(sockfd, buf, &length);//intesting
+			printf("Sending reply: %s\n", buf);//intesting
+		} 
+		else if (out[0] == 'C') { //Check questions
 			char questionIndex = out[1];
 			int64_t seed;
 			memcpy(&seed, out + 2, sizeof(int64_t));
 			char lastAttempt = out[10];
 			char *answer = out + 11;
-			//printf("Check questions %c, %016llX, %c, %s\n", questionIndex, &seed, lastAttempt, answer);
-		} else {
-			//?????
-			printf("Unknown request\n");
+			printf("seed index = %i, seed = %li, is last attempt = %i, answer = %s\n", 
+				questionIndex, seed, lastAttempt, answer);//intesting
+			
+			
+			char buf[] = "heyo! Request C received!"; //intesting
+			int length = strlen(buf);
+			sendAll(sockfd, buf, &length);//intesting
+			printf("Sending reply: %s\n", buf);//intesting
+		} 
+		else { //Should not happen
+			printf("Unknown request: %s\n", out);//intesting
 		}
 
-		free(out);
 	}
-
-	close(sockfd);
-
-	freeaddrinfo(res);
-
-	return 0;
 }

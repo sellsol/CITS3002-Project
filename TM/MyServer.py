@@ -1,11 +1,11 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import unquote
 import json
+from config import *
+from authentication import *
+from datastructs import *
 
-hostName = "localhost"
-serverPort = 8080
-
-class MyServer(BaseHTTPRequestHandler):
+class MyServer(BaseHTTPRequestHandler):            
     # Builds the html page
     def do_GET(self):
         if self.path == "/":
@@ -16,6 +16,8 @@ class MyServer(BaseHTTPRequestHandler):
             with open("index.html", "r") as f:
                 html = f.read()
                 self.wfile.write(bytes(html, "utf-8"))
+        #elif self.path == "/answers":
+            #TODO: send response from tm
         else:
             self.send_response(404)
             self.end_headers()
@@ -29,18 +31,21 @@ class MyServer(BaseHTTPRequestHandler):
             username = data["username"]
             password = data["password"]
             
-            if validate_student(username, password):
+            if validate_student(loginFile ,username, password):
+                questions, types, choices = get_questions(username)
+                current_finished, current_marks, attempts, marks = get_answers(username)
+                
+                print("\tLogged in: " + username)
+                
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
-
-                # Get questions
-                questions = get_questions(username)
-                print(questions)
                 #questions_json = json.dumps(questions)
                 
                 # Send success and questions data
-                response = {"success": True, "questions": questions}
+                response = {"success": True, "questions": questions, "types": types, 
+                            "choices": choices, "current_finished": current_finished, 
+                            "current_marks": current_marks, "attempts": attempts, "marks": marks}
                 self.wfile.write(json.dumps(response).encode("utf-8"))
             else:
                 self.send_response(200)
@@ -52,57 +57,26 @@ class MyServer(BaseHTTPRequestHandler):
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             data = body.decode("utf-8")
-            answer, pos = data.split(":")
+            username, answer, pos, attempts = data.split(":")
             answer = unquote(answer)
             
             # TODO: Do something with this data
-            print("Answer: " + answer)
-            print("Question Number: " + pos)
+            print("\tUsername: " + username)
+            print("\tQuestion Index: " + pos)
+            print("\tAnswer: " + answer)
             
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(bytes("Answer received: " + answer, "utf-8"))
+            
+            response = {"success": True, "correct": check_answer(username, int(pos), answer, int(attempts))} 
+            self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
 
-
-# !!!PLACEHOLDER FUNCTION
-def validate_student(username, password):
-    return True
-
-# !!!PLACEHOLDER FUNCTION
-def get_questions(username):
-    if (username == "username1"):
-        questions = [
-            "What is the capital of France?",
-            "What is the largest country in the world?",
-            "What is the highest mountain in the world?"
-        ]
-    elif (username == "username2"):
-        questions = [
-            "What is the currency of Japan?",
-            "What is the largest desert in the world?",
-            "What is the deepest ocean in the world?"
-        ]
-    else:
-        questions = [
-            "What is the capital of Canada?",
-            "What is the smallest country in the world?",
-            "What is the fastest land animal in the world?"
-        ]
-    return questions
-
-
-if __name__ == "__main__":
-    # Makes a server object
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    webServer.server_close()
-    print("Server stopped.")
+    # handles when user browser unexpectedly closes
+    def handle(self):
+        try:
+            BaseHTTPRequestHandler.handle(self)
+        except socket.error:
+            pass
