@@ -21,7 +21,9 @@ enum PROGRAM PROGRAM_MODE = NONE;
 int sendAll(int s, char *buf, int *len) {
 	int total = 0;
 	int bytesLeft = *len;
-	int n;
+	int n = 0;
+
+	n = send(s, len, sizeof(int), 0); //Gotta figure this out
 	
 	while (total < *len) {
 		n = send(s, buf + total, bytesLeft, 0);
@@ -64,11 +66,12 @@ char* recvAll(int s) {
 int main(int argc, char **argv) {
 	PROGRAM_MODE = NONE;
 	int c;
-	while ((c = getopt(argc, argv, "cp:")) != -1) {
+	while ((c = getopt(argc, argv, "c:p")) != -1) {
 		switch (c) {
 			case 'c':
 				if (PROGRAM_MODE == NONE) {
 					PROGRAM_MODE = C;
+					q_path = c_path;
 					break;
 				} else {
 					return 1;
@@ -76,6 +79,7 @@ int main(int argc, char **argv) {
 			case 'p':
 				if (PROGRAM_MODE == NONE) {
 					PROGRAM_MODE = PYTHON;
+					q_path = py_path;
 					break;
 				} else {
 					return 1;

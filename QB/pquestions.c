@@ -12,6 +12,10 @@
 
 #include "mode.h"
 
+const char *c_path = "./questions/c/";
+const char *py_path = "./questions/python/";
+const char* q_path;
+
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
 	if (strcmp(fpath + 14, "code") == 0 || strcmp(fpath + 14, "code.py") == 0) {
 		return 0;
@@ -71,8 +75,9 @@ char** testCode(char *completed, char *path, char lastAttempt, char *in[], char 
 			dup2(thepipe[1], 1);
 
 			close(thepipe[1]);
+
             if (PROGRAM_MODE == C) {
-			    execv(path, in);
+			    execv("./code", in);
             } else {
                 execv("/usr/bin/python3", in);
             }
@@ -84,18 +89,16 @@ char** testCode(char *completed, char *path, char lastAttempt, char *in[], char 
 
 			//If this is an image, we check it like so
 			if (expectedImage != NULL) {
+				wait(NULL);
 				close(thepipe[0]);
 
-				char *imagePath = calloc(strlen("./code/XXXXXX/image.png"), sizeof(char));
-				strncat(imagePath, path, strlen("./code/XXXXXX/"));
-				strcat(imagePath, "image.png");
-				char *outputImage = readTextFile(imagePath);
+				char *outputImage = readTextFile("./image.png");
 
-				*completed = (strcmp(expectedOut, outputImage) == 0) ? 1 : 0;
+				*completed = (strcmp(expectedImage, outputImage) == 0) ? 1 : 0;
 
 				if (lastAttempt == 1) {
 					char **r = malloc(2*sizeof(char*));
-					r[0] = expectedOut;
+					r[0] = expectedImage;
 					r[1] = outputImage;
 					return r;
 				}
@@ -158,7 +161,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
 
-    char *vl;
+    char *vl; //Feel like we could remove this?
     if (PROGRAM_MODE == C) {
         vl = "/code.c";
     } else {
@@ -195,13 +198,14 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
         codePath = execPath;
     }
 
-    char *questionPath = calloc(strlen("./progq//") + strlen(question) + 1, sizeof(char));
-	strcat(questionPath, "./progq/");
+    char *questionPath = calloc(strlen(q_path) + strlen(question) + 2, sizeof(char));
+	strcat(questionPath, q_path);
 	strcat(questionPath, question);
 	strcat(questionPath, "/");
 
 	//Open relevant folder, start running all tests
 	DIR *d = opendir(questionPath);
+
 
 	//Go through every entry in the directory stream
 	for (struct dirent *dir = readdir(d); dir != NULL; dir = readdir(d)) {
@@ -221,8 +225,6 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			strcat(outPath, questionPath);
 			strcat(outPath, dir->d_name);
 			strcat(outPath, "/out");
-
-			//printf("%s\n", outPath);
 
 			strcat(pngPath, questionPath);
 			strcat(pngPath, dir->d_name);
@@ -257,12 +259,13 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				int i = 1;
 				if (PROGRAM_MODE == PYTHON) {
 					inArgs[0] = "/usr/bin/python3";
-					inArgs[1] = codePath;
+					inArgs[1] = "./code.py";
 					i = 2;
 				} else {
 					inArgs[0] = "code";
 				}
 				printf("%i\n", count + 1);
+
 				//strtok all values to array
 				char *token = strtok(in, "\n");
 				while (token != NULL) {
@@ -273,7 +276,14 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				}
 				inArgs[count] = NULL;
 				free(in);
+
+			} else if (PROGRAM_MODE == PYTHON) {
+				inArgs = malloc(2 * sizeof(char *));
+				inArgs[0] = "/usr/bin/python3";
+				inArgs[1] = "code.py";
+				inArgs[2] = NULL;
 			}
+			printf("%s\n", inArgs[0]);
 
 			char *png = NULL;
 			if (access(pngPath, F_OK) == 0) {
@@ -290,15 +300,22 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			free(outPath);
 			free(pngPath);
 
+			//chdir(dirPath);
+
 			char ret;
-			printf("TESTING...\n");
+			//printf("TESTING...\n");
+			char cwd[1024];
+			chdir(dirPath);
+    		getcwd(cwd, sizeof(cwd));
+    		printf("Current working dir: %s\n", cwd);
 			char **output = testCode(&ret, codePath, lastAttempt, inArgs, out, png);
+			
+			chdir("../..");
 			nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 			//printf("%s\n", output[1]);
 
 			//Free provided data
 			//free(in);
-			free(png);
 
 			if (ret == 0) {
 				*completed = 0;
@@ -310,9 +327,11 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				}
 
 				free(out);
+				free(png);
 				free(output);
 				return NULL;
 			}
+			free(png);
 			free(out);
 		}
 

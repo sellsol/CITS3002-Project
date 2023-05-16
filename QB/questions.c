@@ -13,8 +13,8 @@ const int MIN_LINE_INDEX = 1; //lowest line number in QB
 const int MAX_LINE_LEN = 500; //max length of a line in question set
 const int NUM_QAT_STRINGS = 3; //number of string in ques_types_ans string
 
-char *PY_Q = "python/questionset_py.csv"; //qb ques for python
-char *C_Q = "c/questionset_c.csv"; //qb ques for c
+char *PY_Q = "./questions/python/questionset_py.csv"; //qb ques for python
+char *C_Q = "./questions/c/questionset_c.csv"; //qb ques for c
 
 char prog_lang = 'p';//make seperately
 

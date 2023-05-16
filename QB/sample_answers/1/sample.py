@@ -8,6 +8,6 @@ for y in range(height):
     for x in range(width):
         row = row + (0, 255, 0)
     img.append(row)
-with open('gradient.png', 'wb') as f:
+with open('image.png', 'wb') as f:
     w = png.Writer(width, height, greyscale=False)
     w.write(f, img)
