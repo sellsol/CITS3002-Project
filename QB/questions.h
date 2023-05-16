@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
-#include <mode.h>
+#include "mode.h"
 
 //globals.c
 extern const int MAX_LINE_INDEX; //update according to number of questions in QB's
@@ -23,5 +23,6 @@ extern char *C_Q; //ques for c
 
 //questions.c
 extern int question_ids(int*,int,uint32_t); //a list of question ids
-extern char *a_question(char*,char*,int); //Returns pointer to a questions associated with the question/line id
+extern char *a_question(char*,int); //Returns pointer to a questions associated with the question/line id
 extern int get_questions(char*,uint32_t,int); //a list with 3 strings: questions, types, answers
+#endif

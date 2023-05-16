@@ -171,7 +171,7 @@ int get_questions(char*sending_str,uint32_t seed, int num){
     sprintf(length_str,"%d",length);
     // printf("%s\n",length_str);
 
-    char* sep = "\\;";
+    sep = "\\;";
     char* sending_str = (char*)realloc(sending_str,length+digits+strlen(sep)+(BUFSIZ/2));
     strncat(sending_str,length_str,digits);
     strncat(sending_str,sep,strlen(sep));
