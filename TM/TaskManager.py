@@ -153,12 +153,31 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
             if recv_data[0] == addr:
                 print(f"Received data from {addr}")    
                 
-                # deserialise reply TBC
-                received = data_received.get()[1].decode('utf-8')
+                # deserialise reply
+                rawReceived = data_received.get()[1] 
+                
+                header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                print("length = " + str(header)) #debug
+                rawReceived = rawReceived[4:]
+                is_correct = rawReceived.decode('utf-8')[0] == 't'
 
-                is_correct = received[0] == 't'
-                print(received)
-                return is_correct
+                if not is_correct and is_last_attempt:
+                    header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                    print("header 1 = " + str(header)) #debug
+                    rawReceived = rawReceived[4:]
+                    sample_output = rawReceived[:header].decode('utf-8')
+                    rawReceived = rawReceived[header:]
+                    
+                    header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                    print("header 2 = " + str(header)) #debug
+                    rawReceived = rawReceived[4:]
+                    student_output = rawReceived[:header].decode('utf-8')
+                    
+                    print("is_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
+                    return is_correct#, sample_output, student_output
+                else:
+                    print("is_correct = " + str(is_correct))
+                    return is_correct
             
 def test_ready():
     print(num_qbs)
