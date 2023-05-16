@@ -4,16 +4,13 @@ import selectors
 import types
 from threading import Thread
 from queue import Queue
+from config import *
 
 # selector and queues to maintain communication between threads
 sel = selectors.DefaultSelector()
 data_to_send = Queue()
 data_received = Queue()
 qbs = Queue()
-
-# globals to send
-HOST = "127.0.0.1"
-PORT = 65432
 
 # starts the socket server, runs forever
 def StartServer():

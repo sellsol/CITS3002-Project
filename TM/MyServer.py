@@ -2,14 +2,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from http.cookies import SimpleCookie
 from urllib.parse import unquote
 import json
+from config import *
 from authentication import *
 from datastructs import *
 
-hostName = "localhost"
-serverPort = 8000
-loginFile = "test_login_file.txt"
-
 class MyServer(BaseHTTPRequestHandler):            
+    # Builds the html page
     def do_GET(self):
         if self.path == "/":
             self.send_response(200)
@@ -60,7 +58,6 @@ class MyServer(BaseHTTPRequestHandler):
                 self.send_header("Location", "/")
                 self.send_header("Set-Cookie", cookie.output(header=""))
                 self.end_headers()
-                
             else:
                 self.send_response(401)
                 self.send_header("Content-type", "application/json")
@@ -79,7 +76,6 @@ class MyServer(BaseHTTPRequestHandler):
             print("\tUsername: " + username)
             print("\tQuestion Index: " + pos)
             print("\tAnswer: " + answer)
-            
             self.send_response(200)
             self.end_headers()
             
@@ -97,7 +93,6 @@ class MyServer(BaseHTTPRequestHandler):
                         "choices": choices, "current_finished": current_finished, 
                         "current_marks": current_marks, "attempts": attempts, "marks": marks}
             self.wfile.write(json.dumps(response).encode("utf-8"))
-            
         else:
             self.send_response(404)
             self.end_headers()

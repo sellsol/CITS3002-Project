@@ -1,11 +1,6 @@
 import fileinput
 import sys
-
-# globals (should we have a file for this?)
-num_questions = 3
-DB_filepath = "test_TM_database_v2.txt"
-QB_portnums = [1401,2002] # ignore what this means for now TBC
-
+from config import *
 
 # gets questions info for this student from the QBs
 def get_questions(username):
@@ -22,7 +17,7 @@ def get_questions(username):
         choices.extend([choice.split("\:") for choice in line_questions[2].split("\,")])
         
     return questions, types, choices
-
+  
 # reads current answers info for this student from the TM_database
 def get_answers(username):
     current_finished = 0
