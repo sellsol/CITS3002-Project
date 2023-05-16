@@ -69,7 +69,9 @@ int main(int argc, char *argv[]) {
     if(prog_lang != 'c' && prog_lang != 'p'){
         printf("QB does not exist - choose from 'c' and 'p'\n");
         exit(0);
-    }
+    }else if (prog_lang=='c') PROGRAM_MODE=C;
+	else PROGRAM_MODE=PYTHON;
+	
 
 	int status, sockfd;
 	struct addrinfo hints, *res;
