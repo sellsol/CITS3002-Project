@@ -11,29 +11,25 @@ char *PY_A = "python/answerset_py.csv"; //qb ans for python
 char *C_A = "c/answerset_c.csv"; //qb ans for c
 
 /*
-* Returns true or false if answer is correct and false otherwise
+* returns (0,1,2) for (correct,error,..)
 * modifies sending string to the serialised string to be sent to TM
+* sending string: length//;<t/f>//;(if is last attempt)expected_answer//;student_answer
 */
-bool question_correct(char*sending_str,char prog_lang,int seed,int index,int lastAttempt,char*answer){
+int question_correct(char*sending_str,uint32_t seed,int index,int lastAttempt,char*answer){
     int*ids = malloc((index+1)*sizeof(int));
-    question_ids(ids,prog_lang,index+1,seed);
+    question_ids(ids,index+1,seed);
     char *sep = ","; //general and ans seperator
 
     //printf("%d\n",ids[index]);
 
     char *filename;
     char *ans_file;
-    if(prog_lang=='p'){
+    if(PROGRAM_MODE = PYTHON){
         filename = PY_Q;
         ans_file = PY_A;
-        PROGRAM_MODE = PYTHON;
-    }else if(prog_lang == 'c'){
+    }else{
         filename = C_Q;
         ans_file = C_A;
-        PROGRAM_MODE = C;
-    }else{
-        printf("%s\n","QB language is not supported");
-        return(1);
     }
 
     //checking q_type
@@ -43,7 +39,7 @@ bool question_correct(char*sending_str,char prog_lang,int seed,int index,int las
     line = line + 1;
     char type = line[0];
     
-    bool is_correct = false;
+    int is_correct = 0;
 
     char ans_line[BUFSIZ];
     char**output; //output[0] = expected output, output[1]=answer output
@@ -54,7 +50,7 @@ bool question_correct(char*sending_str,char prog_lang,int seed,int index,int las
         sprintf(question,"%d",ids[index]);
 
         output = compileCode(completed,question,answer,lastAttempt);
-        if(*completed==1) is_correct = true;
+        if(*completed==1) is_correct = 0;
     }else{ // mcq questions
         FILE *fp = fopen(ans_file,"r");
         while(fgets(ans_line,sizeof(ans_line),fp) != NULL){
@@ -70,9 +66,7 @@ bool question_correct(char*sending_str,char prog_lang,int seed,int index,int las
         output[1] = strdup(answer);
 
         if(q_ind==ids[index]){
-            if(strcmp(cor_ans,answer)==0){
-                is_correct = true;
-            }
+            if(strcmp(cor_ans,answer)==0) is_correct = 0;
             break;
         }
         fclose(fp);
@@ -104,7 +98,9 @@ bool question_correct(char*sending_str,char prog_lang,int seed,int index,int las
     sending_str = realloc(sending_str,(length+digits+strlen(str_sep)+(BUFSIZ/2)));
     strncat(sending_str,length_str,digits);
     strncat(sending_str,str_sep,strlen(str_sep));
-    strncat(sending_str,sending_txt,length);    
+    strncat(sending_str,sending_txt,length);
+    printf("\nSending string:\n%s\n",sending_str);
+
     return is_correct;
 }
 
