@@ -18,6 +18,11 @@ const char* q_path;
 
 const int MAX_OUTPUT_LEN = 10000;
 
+struct FileData {
+	int len;
+	char *data;
+};
+
 //File tree walk to clear a folder after a test - preserving the code
 int testUnlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
 	//Preserve code files
@@ -45,7 +50,7 @@ int compileUnlink_cb(const char *fpath, const struct stat *sb, int typeflag, str
 	return rv;
 }
 //Reads text file to string and returns pointer to string. Pointer must be freed after use.
-char* readTextFile(char *path) {
+struct FileData readFile(char *path) {
 	//Stat to get file size
 	struct stat *buf = malloc(sizeof(struct stat));
 	stat(path, buf); //Need to error handle
@@ -62,19 +67,20 @@ char* readTextFile(char *path) {
 	while (got < size) {
 		ret = read(oFd, out + got, size - got);
 		if (ret == -1) {
-			return NULL;
+			return (struct FileData){0, NULL};
 		}
 		got += ret;
 	}
 
 	out[got] = '\0';
 
-	return out;
+	//Format data in struct and return
+	return (struct FileData){size, out};
 }
 
 //Returns NULL if lastAttempt = 0, else returns output.
 //Modifies completed to be 1 if succeeded, 0 if not. 2 means we've had some error
-char* testCode(char *completed, char lastAttempt, char *in[], char *expectedOut, char *expectedImage) {
+struct FileData testCode(char *completed, char lastAttempt, char *in[], char *expectedOut, struct FileData expectedImage) {
 	//Create pipe for running the program
 	int thepipe[2];
 
@@ -88,7 +94,7 @@ char* testCode(char *completed, char lastAttempt, char *in[], char *expectedOut,
 		case -1:
 			perror("fork");
 			*completed = 2;
-			return NULL;
+			return (struct FileData){0, NULL};
 		case 0: //Child process - execl
 			close(thepipe[0]);
 			dup2(thepipe[1], 1);
@@ -108,33 +114,46 @@ char* testCode(char *completed, char lastAttempt, char *in[], char *expectedOut,
 			close(thepipe[1]); //Will never write
 
 			//Initialise variables
-			char *output = malloc(MAX_OUTPUT_LEN);
+			struct FileData output;
+			output.data = malloc(MAX_OUTPUT_LEN);
 
 			//Read from the pipe until we are finished or we have read more data than we were expecting
 			int pos = 0;
-			int got = read(thepipe[0], output, MAX_OUTPUT_LEN);
+			int got = read(thepipe[0], output.data, MAX_OUTPUT_LEN);
 			while (got != 0 || pos == MAX_OUTPUT_LEN) {
 				pos += got;
-				got = read(thepipe[0], output + pos, MAX_OUTPUT_LEN - pos);
+				got = read(thepipe[0], output.data + pos, MAX_OUTPUT_LEN - pos);
 			}
-			output[pos] = '\0';
+			output.data[pos] = '\0';
 
 			wait(NULL); //Should we have some kind of timeout value? Possibly
 			close(thepipe[0]);
 
 			//If this is an image, we check it like so
-			if (expectedImage != NULL) {
-				char *outputImage = readTextFile("./image.png");
+			if (expectedImage.data != NULL) {
+				struct FileData outputImage = readFile("./image.png");
 
-				//Mark image and return
-				*completed = (strcmp(expectedImage, outputImage) == 0) ? 1 : 0;
-
-				if (lastAttempt == 1) {
-					return outputImage;
+				//If not the same length, return
+				if (expectedImage.len != outputImage.len) {
+					*completed = 0;
+					if (lastAttempt == 1) {
+						return outputImage;
+					}
 				}
 
-				free(outputImage);
-				return NULL;
+				//Compare images. Cannot use strcmp due to null characters present
+				for (int i = 0; i < outputImage.len; i++) {
+					if (outputImage.data[i] != expectedImage.data[i]) {
+						*completed = 0;
+						if (lastAttempt == 1) {
+							return outputImage;
+						}
+					}
+				}
+				*completed = 1;
+
+				free(outputImage.data);
+				return (struct FileData){0, NULL};
 			}
 			
 			//We got more input than we were expecting, return failure
@@ -145,26 +164,26 @@ char* testCode(char *completed, char lastAttempt, char *in[], char *expectedOut,
 					return output;
 				}
 
-				free(output);
-				return NULL;
+				free(output.data);
+				return (struct FileData){0, NULL};
 			}
 
 			//Mark whether the test was successfuly completed or not
-			*completed = (strcmp(output, expectedOut) == 0) ? 1 : 0; 
+			*completed = (strcmp(output.data, expectedOut) == 0) ? 1 : 0; 
 			
 			//Return result if this is the last attempt
 			if (lastAttempt == 1) {
 				return output;
 			}
 
-			free(output);
-			return NULL;
+			free(output.data);
+			return (struct FileData){0, NULL};
 	}
 }
 
 //Returns 0 if any of the tests fail, 1 otherwise, or 2 if you fail. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
-char** compileCode(char* completed, char* question, char* code, char lastAttempt) {
+struct FileData* compileCode(char* completed, char* question, char* code, char lastAttempt) {
 	//Create temporary directory for running question
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
@@ -172,7 +191,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 	//Error handle mkdtemp
 	if (dirPath == NULL) {
 		*completed = 2;
-		return NULL;
+		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 	}
     //Create path for the compiled code
 	char *codePath = calloc(strlen("./code/XXXXXX/code.py"), sizeof(char));
@@ -247,14 +266,13 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			char **inArgs = NULL;
 			if (access(inPath, F_OK) == 0) {
 				printf("READING INPUT...\n");
-				char *in = readTextFile(inPath);
+				struct FileData in = readFile(inPath);
 				//Handle reading input file
 
 				//Count all the instances of '\n'
-				int len = strlen(in);
 				int count = 1;
-				for (int i = 0; i < len; i++) {
-					if (in[i] == '\n') {
+				for (int i = 0; i < in.len; i++) {
+					if (in.data[i] == '\n') {
 						count += 1;
 					}
 				}
@@ -277,10 +295,9 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				} else {
 					inArgs[0] = "code";
 				}
-				printf("%i\n", count + 1);
 
 				//strtok all values to array
-				char *token = strtok(in, "\n");
+				char *token = strtok(in.data, "\n");
 				while (token != NULL) {
 					printf("%i - %s\n",i , token);
 					inArgs[i] = strdup(token);
@@ -288,7 +305,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 					token = strtok(NULL, "\n");
 				}
 				inArgs[count] = NULL;
-				free(in);
+				free(in.data);
 
 			} else if (PROGRAM_MODE == PYTHON) {
 				inArgs = malloc(2 * sizeof(char *));
@@ -296,17 +313,15 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				inArgs[1] = "code.py";
 				inArgs[2] = NULL;
 			}
-			printf("OO\n");
 
-			char *png = NULL;
+			struct FileData png = {0, NULL};
 			if (access(pngPath, F_OK) == 0) {
-				png = readTextFile(pngPath);
+				png = readFile(pngPath);
 			}
-			printf("AAAAAA\n");
 
-			char *out = NULL;
+			struct FileData out = {0, NULL};
 			if (access(outPath, F_OK) == 0) {
-				out = readTextFile(outPath);
+				out = readFile(outPath);
 			}
 				
 			//Free paths
@@ -319,11 +334,10 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			chdir(dirPath);
     		getcwd(cwd, sizeof(cwd));
     		printf("Current working dir: %s\n", cwd);
-			char *output = testCode(&ret, lastAttempt, inArgs, out, png);
-			
+			struct FileData output = testCode(&ret, lastAttempt, inArgs, out.data, png);
+
 			chdir("../..");
-			nftw(dirPath, testUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
-			//printf("%s\n", output[1]);
+			//nftw(dirPath, testUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 
 			//Free provided data
 			//free(in);
@@ -334,25 +348,25 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				unlink(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
-					char **r = malloc(2 * sizeof(char *));
+					struct FileData *r = malloc(2 * sizeof(struct FileData));
 					r[0] = out;
 					r[1] = output;
+					//memcpy(r[1], &output, sizeof(struct FileData));
 					return r;
 				}
 
-				free(out);
-				free(png);
-				free(output);
-				return NULL;
+				free(out.data);
+				free(png.data);
+				return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 			}
-			free(png);
-			free(out);
+			free(png.data);
+			free(out.data);
 		}
 
 		*completed = 1;
 
 		closedir(d);
 		unlink(codePath);
-		nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
-		return NULL;
+		//nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 }

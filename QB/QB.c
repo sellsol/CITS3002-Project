@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 
 			//Compile and test code
 			char completed;
-			char** ret = compileCode(&completed, questionFile, answer, lastAttempt);
+			struct FileData* ret = compileCode(&completed, questionFile, answer, lastAttempt);
 
 			//Send response back
 			if (completed == 0) {
@@ -190,10 +190,6 @@ int main(int argc, char **argv) {
 
 				int responseLen = sizeof(char) + strlen(ret[0]) + 3 + strlen(ret[1]);
 				char *response = calloc(responseLen, sizeof(char));
-				//response[0] = completed;
-				//strcat(response + sizeof(char), ret[0]);
-				//strcat(response, ";");
-				//strcat(response, ret[1]);
 				snprintf(response, responseLen, "%c%s;%s", completed, ret[0], ret[1]);
 
 				//Send response
