@@ -2,11 +2,12 @@
 * Fetches the questions ids and questions from questions sets for a session
 */
 
-/*Compile with:
+/*Compile for testing:
     cc -o questions questions.c -lm
 */
 
 #include "questions.h"
+
 
 const int MAX_LINE_INDEX = 11; //update according to number of questions in QB's
 const int MIN_LINE_INDEX = 1; //lowest line number in QB
@@ -16,11 +17,12 @@ const int NUM_QAT_STRINGS = 3; //number of string in ques_types_ans string
 char *PY_Q = "python/questionset_py.csv"; //ques for python
 char *C_Q = "c/questionset_c.csv"; //ques for c
 
+
 /*
 * Returns a list of question ids
 * The seed is the unique int that is associated with the string
 */
-int question_ids(int *ids, char prog_lang, char num, int64_t seed){
+int question_ids(int *ids, char num, int64_t seed){
     //generating question ids for 
     srand(seed);
 
@@ -74,7 +76,7 @@ char *a_question(char*line,char *filename,int line_index){
 * modifies sending string to have the fully serialised string with questions,types,answers
 */
 char **ques_types_ans; //pointer to question, types, and answer 
-int get_questions(char prog_lang, int64_t seed, int num){
+int get_questions(int64_t seed, int num){
 
     ques_types_ans = realloc(ques_types_ans, (NUM_QAT_STRINGS + 1) * sizeof(ques_types_ans[0]));
 
@@ -88,7 +90,7 @@ int get_questions(char prog_lang, int64_t seed, int num){
     char *sep = ","; //general csv seperator
 
     char *filename;
-    if(prog_lang=='p'){
+    if(PROGRAM_MODE == PYTHON){
         filename = PY_Q;
     }else{
         filename = C_Q;
@@ -123,12 +125,12 @@ int get_questions(char prog_lang, int64_t seed, int num){
         }
         
         //debugging
-        // printf("%c\n",type);
-        // printf("%s\n",ques);
-        // printf("%s\n",ans);
+        //  printf("%c\n",type);
+        //  printf("%s\n",ques);
+        //  printf("%s\n",ans);
 
         //adding substrings to respective strings
-        if(type=='c'){
+        if(type=='0'){
             strncat(questions,ques,strlen(ques)-1);//removing trailing \n for coding ques
         }
         else {
@@ -136,7 +138,7 @@ int get_questions(char prog_lang, int64_t seed, int num){
         }
         strncat(questions,q_sep,strlen(q_sep));
 
-        if(type!= 'c'){
+        if(type!= '0'){
             strncat(answers,ans,strlen(ans)-1); //removing trailing \n for mcq answers
             strncat(answers,q_sep,strlen(q_sep));
         }
@@ -155,8 +157,20 @@ int get_questions(char prog_lang, int64_t seed, int num){
 }
 
 char* genQuestionsReply(int numQuestions, int seed) {
-    int ques = get_questions(prog_lang, seed, numQuestions);
+    int ques = get_questions(seed, numQuestions);
 
     char *sending_txt = malloc(BUFSIZ);
     sprintf(sending_txt, "%s%s%s", ques_types_ans[0], ques_types_ans[1], ques_types_ans[2]);
+
+    return sending_txt;
 }
+
+//debugging only
+// int main(){
+//     enum PROGRAM PROGRAM_MODE = PYTHON;
+//     int num = 5;
+//     int seed = 12;
+//     char*sending_txt = malloc(BUFSIZ);
+//     char*sending_text = genQuestionsReply(num,seed);
+//     printf("Sending string: %s\n",sending_txt);
+// }

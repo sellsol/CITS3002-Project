@@ -15,7 +15,7 @@ char *C_A = "c/answerset_c.csv"; //qb ans for c
 * modifies sending string to the serialised string to be sent to TM
 * sending string: length//;<t/f>//;(if is last attempt)expected_answer//;student_answer
 */
-int question_correct(char*sending_str,uint32_t seed,int index,int lastAttempt,char*answer){
+int question_correct(char*sending_str,int64_t seed,int index,int lastAttempt,char*answer){
     int*ids = malloc((index+1)*sizeof(int));
     question_ids(ids,index+1,seed);
     char *sep = ","; //general and ans seperator
@@ -24,7 +24,7 @@ int question_correct(char*sending_str,uint32_t seed,int index,int lastAttempt,ch
 
     char *filename;
     char *ans_file;
-    if(PROGRAM_MODE = PYTHON){
+    if(PROGRAM_MODE == PYTHON){
         filename = PY_Q;
         ans_file = PY_A;
     }else{
@@ -95,7 +95,7 @@ int question_correct(char*sending_str,uint32_t seed,int index,int lastAttempt,ch
     sprintf(length_str,"%d",length);
     // printf("%s\n",length_str);
     
-    sending_str = realloc(sending_str,(length+digits+strlen(str_sep)+(BUFSIZ/2)));
+    sending_str = malloc((length+digits+strlen(str_sep)+(BUFSIZ/2))*sizeof(char));
     strncat(sending_str,length_str,digits);
     strncat(sending_str,str_sep,strlen(str_sep));
     strncat(sending_str,sending_txt,length);
