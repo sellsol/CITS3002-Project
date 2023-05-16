@@ -12,6 +12,7 @@ char *C_A = "c/answerset_c.csv"; //qb ans for c
 
 /*
 * Returns true or false if answer is correct and false otherwise
+* modifies sending string to the serialised string to be sent to TM
 */
 bool question_correct(char*sending_str,char prog_lang,int seed,int index,int lastAttempt,char*answer){
     int*ids = malloc((index+1)*sizeof(int));
@@ -108,21 +109,21 @@ bool question_correct(char*sending_str,char prog_lang,int seed,int index,int las
 }
 
 //debugging
-int main(int index,int seed, int last_attempt){
-    index = 5;
-    seed = 12;
-    last_attempt = 1;
+// int main(int index,int seed, int last_attempt){
+//     index = 5;
+//     seed = 12;
+//     last_attempt = 1;
     
-    char prog_lang = 'p';
-    char*answer="int";
-    char*sending_str;
-    bool correct = question_correct(sending_str,prog_lang,index,seed,last_attempt,answer);
-    if(correct){
-        printf("%s\n","Correct!");
-    }else{
-        printf("%s\n","Wrong :(");
-    }
-    printf("\nSending string:\n%s\n",sending_str);
-    return 0;
-    free(sending_str);
-}
+//     char prog_lang = 'p';
+//     char*answer="int";
+//     char*sending_str;
+//     bool correct = question_correct(sending_str,prog_lang,index,seed,last_attempt,answer);
+//     // if(correct){
+//     //     printf("%s\n","Correct!");
+//     // }else{
+//     //     printf("%s\n","Wrong :(");
+//     // }
+//     printf("\nSending string:\n%s\n",sending_str);
+//     return 0;
+//     free(sending_str);
+// }
