@@ -17,7 +17,7 @@ def get_questions(username):
         choices.extend([choice.split("\:") for choice in line_questions[2].split("\,")])
         
     return questions, types, choices
-
+  
 # reads current answers info for this student from the TM_database
 def get_answers(username):
     current_finished = 0

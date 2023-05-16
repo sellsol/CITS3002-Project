@@ -3,63 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <title>Sample Questions</title>
+        <!-- Styling -->
+        <style>
+          body {
+            background-color: #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
+    
+          form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+          }
+    
+          label {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-family: Arial, sans-serif;
+          }
+    
+          input[type="password"],
+          input[type="text"] {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            margin-bottom: 1rem;
+            font-family: Arial, sans-serif;
+          }
 
-    <!-- Styling -->
-    <style>
-      body {
-        background-color: #f2f2f2;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-
-      h1 {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-        text-align: center;
-        font-family: Arial, sans-serif;
-      }
-
-      form {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 1rem;
-      }
-
-      label {
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-        font-family: Arial, sans-serif;
-      }
-
-      input[type="password"],
-      input[type="text"] {
-        padding: 0.5rem;
-        font-size: 1rem;
-        border-radius: 0.5rem;
-        border: none;
-        margin-bottom: 1rem;
-        font-family: Arial, sans-serif;
-      }
-
-      input[type="submit"] {
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
-        border-radius: 0.5rem;
-        border: none;
-        background-color: #0077cc;
-        color: #fff;
-        cursor: pointer;
-        font-family: Arial, sans-serif;
-      }
-
-      button:hover,
-      input[type="submit"]:hover {
-        background-color: #005fa3;
-      }    
-      
-    </style>
+          input[type="submit"] {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            background-color: #0077cc;
+            color: #fff;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+          }
+    
+          button {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            background-color: #0077cc;
+            color: #fff;
+            cursor: pointer;
+            margin-right: 1rem;
+            font-family: Arial, sans-serif;
+          }
+    
+          button:last-of-type {
+            margin-right: 0;
+          }
+    
+          button:hover,
+          input[type="submit"]:hover {
+            background-color: #005fa3;
+          }
+    
+          .horizontal-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+        </style>
   </head>
   <body>
     <!-- Login Page -->
@@ -77,26 +90,27 @@
     <script>
       // Submits login form
       function submitLoginForm() {
-        username = document.getElementById("username").value;
-        var password = document.getElementById("password").value;
-
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+      
         // make an AJAX call to authenticate the user's credentials
-        var xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
         xhr.open("POST", "/login", true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = function () {
-          if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            var response = JSON.parse(xhr.responseText);
-            console.log(response);
-            if (response.success) {
-              window.location.href = "/questions";
-            } else {
-              // authentication failed, display an error message
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            console.log(xhr);
+            if (xhr.status === 200) {
+              console.log("200");
+              window.location.href = "/";
+            } else if (xhr.status === 401) { //TODO: better error
+              // invalid
+              console.log("401");
               alert("Invalid username or password.");
             }
           }
         };
-        var data = {
+        const data = {
           username: username,
           password: password,
         };
