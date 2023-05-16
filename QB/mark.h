@@ -2,6 +2,6 @@
 #include "mode.h"
 #include "pquestions.h"
 
-extern int question_correct(char*,uint32_t,int,int,char*);
+extern struct FileData question_correct(uint32_t,char,char,char*);
 extern char *PY_A; //ans for python
 extern char *C_A; //ans for c

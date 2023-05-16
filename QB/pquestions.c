@@ -11,17 +11,13 @@
 #include <ftw.h>
 
 #include "mode.h"
+#include "pquestions.h"
 
 const char *c_path = "./questions/c/";
 const char *py_path = "./questions/python/";
 const char* q_path;
 
 const int MAX_OUTPUT_LEN = 10000;
-
-struct FileData {
-	int len;
-	char *data;
-};
 
 //File tree walk to clear a folder after a test - preserving the code
 int testUnlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {

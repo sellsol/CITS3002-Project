@@ -45,21 +45,23 @@ int question_ids(int*ids, int num, uint32_t seed){
 /*
 * Returns a questions associated with the question/line id
 */
-char *a_question(char *filename,int line_index){
+char *a_question(char *filename,int line_index) {
 
     if(line_index>MAX_LINE_INDEX){
         perror("question does not exist\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
+    //Opens file we're reading
     FILE *fp = fopen(filename,"r");
 
     int line_num = 0;
 
+    //Read lines until we get the one we're looking for
     char *buffer = malloc(MAX_LINE_LEN);
     while(fgets(buffer,MAX_LINE_LEN,fp) != NULL && line_index!=line_num){
         ++line_num;
-        if(line_num==line_index) break;
+        //if(line_num==line_index) break; //Why is this here when we have a condition up there??
     }
 
     fclose(fp);
@@ -165,6 +167,7 @@ int get_questions(char*sending_str,uint32_t seed, int num){
     memcpy(sending_txt+strlen(ques_types_ans[0]),ques_types_ans[1],strlen(ques_types_ans[1]));
     memcpy(sending_txt+strlen(ques_types_ans[0])+strlen(ques_types_ans[1]),ques_types_ans[2],strlen(ques_types_ans[2]));
 
+    /*
     int length = strlen(sending_txt);
     int digits = floor(log10(length)+1)+1;
     char length_str[digits];
@@ -172,10 +175,10 @@ int get_questions(char*sending_str,uint32_t seed, int num){
     // printf("%s\n",length_str);
 
     sep = "\\;";
-    char* sending_str = (char*)realloc(sending_str,length+digits+strlen(sep)+(BUFSIZ/2));
+    sending_str = (char*)realloc(sending_str,length+digits+strlen(sep)+(BUFSIZ/2));
     strncat(sending_str,length_str,digits);
     strncat(sending_str,sep,strlen(sep));
-    strncat(sending_str,sending_txt,length);
+    strncat(sending_str,sending_txt,length);*/
 
     return 0;
 }

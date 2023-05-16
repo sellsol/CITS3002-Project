@@ -14,6 +14,7 @@
 #include "questions.h"
 #include "pquestions.h"
 #include "mode.h"
+#include "mark.h"
 
 enum PROGRAM PROGRAM_MODE = NONE;
 
@@ -146,15 +147,7 @@ int main(int argc, char **argv) {
 			int64_t seed;
 			memcpy(&seed, msg + 2, sizeof(int64_t));
 			
-			//printf("Generate request %d, %016llX\n", numQuestions, &seed);
-			int *ids = malloc(numQuestions * sizeof(int));
-			int val = question_ids(ids, 'c', numQuestions, seed);
 			
-			for (char i = 0; i < numQuestions; i++) {
-				printf("Question id: %i\n", ids[i]);
-			}
-			//printf("%i\n");
-			free(ids);
 		} else if (msg[0] == 'C') { //Check questions request
 
 			//Disects request data
@@ -166,6 +159,10 @@ int main(int argc, char **argv) {
 
 			printf("Request to check questions with data %d, %016llX, %d, %s\n", questionIndex, &seed, lastAttempt, answer);
 
+			struct FileData response = question_correct(seed, questionIndex, lastAttempt, answer);
+			sendAll(sockfd, response.data, response.len);
+			free(response.data);
+			/* OLD CODE IN STORAGE
 			//Get the question id
 			int *ids = malloc(questionIndex * sizeof(int));
 			int val = question_ids(ids, 'c', questionIndex + 1, seed);
@@ -199,7 +196,7 @@ int main(int argc, char **argv) {
 			} else {
 				printf("CORRECT\n"); //Actually, this will trigger even if we have some kind of failure on our side
 				sendAll(sockfd, &completed, sizeof(char));
-			}
+			}*/
 
 
 		} else {
