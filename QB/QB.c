@@ -17,54 +17,56 @@
 
 enum PROGRAM PROGRAM_MODE = NONE;
 
-//sendAll Shamelessly stolen from beej's guide to networking
-int sendAll(int s, char *buf, int *len) {
-	int total = 0;
-	int bytesLeft = *len;
-	int n = 0;
+//Send all data 'buf' to socket on file descriptor 's'. Buf is of length 'len'
+//Returns 0 if all data is sent successfully, else -1
+int sendAll(int s, char *buf, int len) {
+	int total = 0; //Tracker of the number of bytes sent
+	int n = 0; //Temporary variable to store output of send
 
-	n = send(s, len, sizeof(int), 0); //Gotta figure this out
+	n = send(s, &len, sizeof(int), 0); //Send the header
+	//TODO: Ensure the header will be completely sent
 	
-	while (total < *len) {
-		n = send(s, buf + total, bytesLeft, 0);
+	while (total < len) {
+		n = send(s, buf + total, len - total, 0); //Send all data 
 		if (n == -1) {
-			return -1;
+			return -1; //Quit the function on an error
 		}
 
 		total += n;
-		bytesLeft -= n;
 	}
 
-	*len = total;
 	return 0;
 }
 
-//out should be length 1024 for testing, i'll come up with something better later
+//Receive an entire message from socket on file descriptor 's'
 char* recvAll(int s) {
-	int len;
-	int ret = recv(s, &len, sizeof len, 0); //Get length of message
+	int len; //Header describing the length of the message
+	int ret = recv(s, &len, sizeof(len), 0); //Get length of message
+	printf("%i\n", len);
 	if (ret == -1) {
-		//Go apeshit
+		return NULL;
 	}
-	char *out = malloc(len); //Error handle here
+	char *msg = malloc(len); //Error handle here
 	//len = ntohl(len); Don't know what beej was thinking, this shit just breaks everything
 	
-	char *b = out;
+	char *index = msg; //Create an index to trawl across allocated memory
 
+	//While we haven't read the entire message yet
 	while (len > 0) {
-		int n = recv(s, b, len, 0); //Error handle here
-		if (n == -1) {
+		ret = recv(s, index, len, 0); //Read data
+		if (ret == -1) {
 			return NULL;
 		}
-		b += n;
-		len -= n;
+		index += ret;
+		len -= ret;
 	}
 
-	return out;
+	return msg; //TODO: Return length of the message with message
 }
 
 int main(int argc, char **argv) {
-	PROGRAM_MODE = NONE;
+
+	//Use argv to determine QB mode
 	int c;
 	while ((c = getopt(argc, argv, "c:p")) != -1) {
 		switch (c) {
@@ -74,7 +76,8 @@ int main(int argc, char **argv) {
 					q_path = c_path;
 					break;
 				} else {
-					return 1;
+					printf("Usage: QB -[c|p]\n");
+					exit(EXIT_FAILURE);
 				}
 			case 'p':
 				if (PROGRAM_MODE == NONE) {
@@ -82,49 +85,66 @@ int main(int argc, char **argv) {
 					q_path = py_path;
 					break;
 				} else {
-					return 1;
+					printf("Usage: QB -[c|p]\n");
+					exit(EXIT_FAILURE);
 				}
 			case '?':
-				//Handle appropriately
+				printf("Usage: QB -[c|p]\n");
+				exit(EXIT_FAILURE);
 			default:
 				abort();
 		}
 	}
 
+	if (PROGRAM_MODE == NONE) {
+		printf("Usage: QB -[c|p]\n");
+		exit(EXIT_FAILURE);
+	}
+
+	//Socket setup
 	int status, sockfd;
 	struct addrinfo hints, *res;
 
-	memset(&hints, 0, sizeof hints);
+	memset(&hints, 0, sizeof hints); //Allocate memory for hints
+									//NOTE: I'm not gonna error handle every goddamn malloc that cross my path- we'll be here all day
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
+
+	//Initialise socket data
 	if ((status = getaddrinfo("127.0.0.1", "65432", &hints, &res)) != 0) {
 		fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
+	//Feels like we should free hints and res after this
 
+	//Open socket
 	if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
 		perror("client: socket");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
+	//Connect to server
 	if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
 		close(sockfd);
 		perror("client: connect");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
+
+	//SetSockOpt should be around here somewhere
 
 	printf("SUCCESSFULLY CONNECTED TO SERVER\n");
 
 	//Here's where we start our loop
 	int len = 0;
-	char *out;
+	char *msg;
 	while (len != -1) {
-		out = recvAll(sockfd);
+		msg = recvAll(sockfd);
 
-		if (out[0] == 'G') { //Generate questions
-			char numQuestions = out[1];
+		//Possibly make this a switch?
+		if (msg[0] == 'G') { //Generate questions request
+			char numQuestions = msg[1];
 			int64_t seed;
-			memcpy(&seed, out + 2, sizeof(int64_t));
+			memcpy(&seed, msg + 2, sizeof(int64_t));
 			
 			//printf("Generate request %d, %016llX\n", numQuestions, &seed);
 			int *ids = malloc(numQuestions * sizeof(int));
@@ -133,15 +153,16 @@ int main(int argc, char **argv) {
 			for (char i = 0; i < numQuestions; i++) {
 				printf("Question id: %i\n", ids[i]);
 			}
-			//printf("%i\n");		
-		} else if (out[0] == 'C') { //Check questions
+			//printf("%i\n");
+			free(ids);
+		} else if (msg[0] == 'C') { //Check questions request
 
 			//Disects request data
-			char questionIndex = out[1];
+			char questionIndex = msg[1];
 			int64_t seed;
-			memcpy(&seed, out + 2, sizeof(int64_t));
-			char lastAttempt = out[10];
-			char *answer = out + 11;
+			memcpy(&seed, msg + 2, sizeof(int64_t));
+			char lastAttempt = msg[10];
+			char *answer = msg + 11;
 
 			printf("Request to check questions with data %d, %016llX, %d, %s\n", questionIndex, &seed, lastAttempt, answer);
 
@@ -153,35 +174,44 @@ int main(int argc, char **argv) {
 
 			//Gets the question file name
 			char* line = a_question(C_Q, ids[questionIndex]);
-			char* fileName = strtok(line, ",");
+			char* questionFile = strtok(line, ",");
+			
+			//Cleans up some loose memory from disecting request data
+			free(ids);
 
 			//Compile and test code
 			char completed;
-			char** ret = compileCode(&completed, fileName, answer, lastAttempt);
+			char** ret = compileCode(&completed, questionFile, answer, lastAttempt);
 
 			//Send response back
 			if (completed == 0) {
-				char *msg = calloc(1 + strlen(ret[0]) + 3 + strlen(ret[1]), sizeof(char));
-				msg[0] = completed;
-				strcat(msg + 1, ret[0]);
-				strcat(msg, ";");
-				strcat(msg, ret[1]);
-				int thing = strlen(msg);
-				printf("WRONG: SENDING %s\n", msg);
-				sendAll(sockfd, msg, &thing);
+				//Formulate incorrect response
+				//Template: 0 + expectedOutput + ';' + output
+
+				int responseLen = sizeof(char) + strlen(ret[0]) + 3 + strlen(ret[1]);
+				char *response = calloc(responseLen, sizeof(char));
+				//response[0] = completed;
+				//strcat(response + sizeof(char), ret[0]);
+				//strcat(response, ";");
+				//strcat(response, ret[1]);
+				snprintf(response, responseLen, "%c%s;%s", completed, ret[0], ret[1]);
+
+				//Send response
+				printf("WRONG: SENDING %s\n", response);
+				sendAll(sockfd, response, responseLen);
+				free(response);
 			} else {
-				printf("CORRECT\n");
-				int thing = 1;
-				sendAll(sockfd, &completed, &thing);
+				printf("CORRECT\n"); //Actually, this will trigger even if we have some kind of failure on our side
+				sendAll(sockfd, &completed, sizeof(char));
 			}
 
 
 		} else {
-			//?????
-			printf("Unknown request\n");
+			printf("Unknown request: %s\n", msg);
+			//We should send some kind of clarification code on this one
 		}
 
-		free(out);
+		free(msg);
 	}
 
 	close(sockfd);

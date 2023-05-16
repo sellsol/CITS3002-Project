@@ -16,10 +16,15 @@ const char *c_path = "./questions/c/";
 const char *py_path = "./questions/python/";
 const char* q_path;
 
-int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+const int MAX_OUTPUT_LEN = 10000;
+
+//File tree walk to clear a folder after a test - preserving the code
+int testUnlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+	//Preserve code files
 	if (strcmp(fpath + 14, "code") == 0 || strcmp(fpath + 14, "code.py") == 0) {
 		return 0;
 	}
+	//Else remove
 	int rv = remove(fpath);
 
 	if (rv) {
@@ -29,7 +34,8 @@ int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW
 	return rv;
 }
 
-int unlink_cb2(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+//File tree walk to clear a folder after running all tests - complete annihilation
+int compileUnlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
 	int rv = remove(fpath);
 
 	if (rv) {
@@ -40,15 +46,25 @@ int unlink_cb2(const char *fpath, const struct stat *sb, int typeflag, struct FT
 }
 //Reads text file to string and returns pointer to string. Pointer must be freed after use.
 char* readTextFile(char *path) {
+	//Stat to get file size
 	struct stat *buf = malloc(sizeof(struct stat));
 	stat(path, buf); //Need to error handle
 	int size = buf->st_size;
 
-	char *out = malloc(size + 1); //Need to really make sure this works Feels like I should add 1
-	int oFd = open(path, O_RDONLY);
-	int got = read(oFd, out, size);
+	char *out = malloc(size + 1); //Plus 1 is for end-of-line character
+	int oFd = open(path, O_RDONLY); //Open file
+
+	//Initialise reader variables
+	int ret = read(oFd, out, size);
+	int got = ret; //This should be done better
+
+	//Read entire file
 	while (got < size) {
-		got += read(oFd, out + got, size - got);
+		ret = read(oFd, out + got, size - got);
+		if (ret == -1) {
+			return NULL;
+		}
+		got += ret;
 	}
 
 	out[got] = '\0';
@@ -57,8 +73,9 @@ char* readTextFile(char *path) {
 }
 
 //Returns NULL if lastAttempt = 0, else returns output.
-//Modifies completed to be 1 if succeeded, 0 if not
-char** testCode(char *completed, char *path, char lastAttempt, char *in[], char *expectedOut, char *expectedImage) {
+//Modifies completed to be 1 if succeeded, 0 if not. 2 means we've had some error
+char* testCode(char *completed, char lastAttempt, char *in[], char *expectedOut, char *expectedImage) {
+	//Create pipe for running the program
 	int thepipe[2];
 
 	if (pipe(thepipe) != 0) {
@@ -66,72 +83,66 @@ char** testCode(char *completed, char *path, char lastAttempt, char *in[], char 
 		exit(EXIT_FAILURE);
 	}
 
+	//Fork
 	switch (fork()) {
 		case -1:
 			perror("fork");
-			exit(EXIT_FAILURE); //Should we just crash the program? Not sure
+			*completed = 2;
+			return NULL;
 		case 0: //Child process - execl
 			close(thepipe[0]);
 			dup2(thepipe[1], 1);
 
 			close(thepipe[1]);
 
+			//Run the program using execv depending on it's type
             if (PROGRAM_MODE == C) {
 			    execv("./code", in);
             } else {
                 execv("/usr/bin/python3", in);
             }
-			//Should probably use execv for multiple parameters
+			//Should handle this better
 			perror("User program crashed");
 			exit(EXIT_FAILURE);
 		default:
 			close(thepipe[1]); //Will never write
 
+			//Initialise variables
+			char *output = malloc(MAX_OUTPUT_LEN);
+
+			//Read from the pipe until we are finished or we have read more data than we were expecting
+			int pos = 0;
+			int got = read(thepipe[0], output, MAX_OUTPUT_LEN);
+			while (got != 0 || pos == MAX_OUTPUT_LEN) {
+				pos += got;
+				got = read(thepipe[0], output + pos, MAX_OUTPUT_LEN - pos);
+			}
+			output[pos] = '\0';
+
+			wait(NULL); //Should we have some kind of timeout value? Possibly
+			close(thepipe[0]);
+
 			//If this is an image, we check it like so
 			if (expectedImage != NULL) {
-				wait(NULL);
-				close(thepipe[0]);
-
 				char *outputImage = readTextFile("./image.png");
 
+				//Mark image and return
 				*completed = (strcmp(expectedImage, outputImage) == 0) ? 1 : 0;
 
 				if (lastAttempt == 1) {
-					char **r = malloc(2*sizeof(char*));
-					r[0] = expectedImage;
-					r[1] = outputImage;
-					return r;
+					return outputImage;
 				}
 
 				free(outputImage);
 				return NULL;
 			}
-			//Else it's some text response, so we check as shown below
-
-			//Initialise variables
-			int expectedLen = 10000; //Not allowed to have 10000 or more chars
-			char *output = malloc(expectedLen);
-
-			//Read from the pipe until we are finished or we have read more data than we were expecting
-			int pos = 0;
-			int got = read(thepipe[0], output, expectedLen);
-			while (got != 0 || pos == expectedLen) {
-				pos += got;
-				got = read(thepipe[0], output + pos, expectedLen - pos);
-			}
-			output[pos] = '\0';
-			wait(NULL);
-			close(thepipe[0]);
 			
 			//We got more input than we were expecting, return failure
-			if (pos > expectedLen) {
+			if (pos > MAX_OUTPUT_LEN) {
 				*completed = 0;
 				if (lastAttempt == 1) { //Return output if this is the last attempt
 					// concat ... and then we stopped reading to the end of this
-					char **r = malloc(2 * sizeof(char *));
-					r[0] = expectedOut;
-					r[1] = output;
-					return r;
+					return output;
 				}
 
 				free(output);
@@ -143,10 +154,7 @@ char** testCode(char *completed, char *path, char lastAttempt, char *in[], char 
 			
 			//Return result if this is the last attempt
 			if (lastAttempt == 1) {
-				char **r = malloc(2 * sizeof(char *));
-				r[0] = expectedOut;
-				r[1] = output;
-				return r;
+				return output;
 			}
 
 			free(output);
@@ -154,25 +162,28 @@ char** testCode(char *completed, char *path, char lastAttempt, char *in[], char 
 	}
 }
 
-//Returns 0 if any of the tests fail, 1 otherwise. See testCode for my comments on this
+//Returns 0 if any of the tests fail, 1 otherwise, or 2 if you fail. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
 char** compileCode(char* completed, char* question, char* code, char lastAttempt) {
 	//Create temporary directory for running question
 	char tempPath[14] = "./code/XXXXXX";
 	char *dirPath = mkdtemp(tempPath);
 
-    char *vl; //Feel like we could remove this?
-    if (PROGRAM_MODE == C) {
-        vl = "/code.c";
-    } else {
-        vl = "/code.py";
-    }
-
+	//Error handle mkdtemp
+	if (dirPath == NULL) {
+		*completed = 2;
+		return NULL;
+	}
     //Create path for the compiled code
-	char *codePath = calloc(strlen("./code/XXXXXX") + strlen(vl) , sizeof(char));
+	char *codePath = calloc(strlen("./code/XXXXXX/code.py"), sizeof(char));
 
+	//Concatenate path
 	strcat(codePath, dirPath);
-    strcat(codePath, vl);
+	if (PROGRAM_MODE == C) {
+		strcat(codePath, "/code.c");
+	} else {
+		strcat(codePath, "/code.py");
+	}
 
     //Write the code to file
     int pFd = creat(codePath, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH); //Error handle here
@@ -183,13 +194,14 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 	    //Get the executable path
 	    char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
 
+		//Fork and compile using gcc
         switch(fork()) {
             case -1:
                 exit(EXIT_FAILURE);
             case 0: //Child process - execv
 			    execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
 			    perror("/usr/bin/gcc");
-			    exit(EXIT_FAILURE);
+			    exit(EXIT_FAILURE); //Definitely need to report any compile errors
             default:
                 wait(NULL);
         }
@@ -198,6 +210,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
         codePath = execPath;
     }
 
+	//Get path to questions
     char *questionPath = calloc(strlen(q_path) + strlen(question) + 2, sizeof(char));
 	strcat(questionPath, q_path);
 	strcat(questionPath, question);
@@ -259,7 +272,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				int i = 1;
 				if (PROGRAM_MODE == PYTHON) {
 					inArgs[0] = "/usr/bin/python3";
-					inArgs[1] = "./code.py";
+					inArgs[1] = "./code";
 					i = 2;
 				} else {
 					inArgs[0] = "code";
@@ -283,12 +296,13 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				inArgs[1] = "code.py";
 				inArgs[2] = NULL;
 			}
-			printf("%s\n", inArgs[0]);
+			printf("OO\n");
 
 			char *png = NULL;
 			if (access(pngPath, F_OK) == 0) {
 				png = readTextFile(pngPath);
 			}
+			printf("AAAAAA\n");
 
 			char *out = NULL;
 			if (access(outPath, F_OK) == 0) {
@@ -300,18 +314,15 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			free(outPath);
 			free(pngPath);
 
-			//chdir(dirPath);
-
 			char ret;
-			//printf("TESTING...\n");
 			char cwd[1024];
 			chdir(dirPath);
     		getcwd(cwd, sizeof(cwd));
     		printf("Current working dir: %s\n", cwd);
-			char **output = testCode(&ret, codePath, lastAttempt, inArgs, out, png);
+			char *output = testCode(&ret, lastAttempt, inArgs, out, png);
 			
 			chdir("../..");
-			nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+			nftw(dirPath, testUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 			//printf("%s\n", output[1]);
 
 			//Free provided data
@@ -321,9 +332,12 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				*completed = 0;
 				closedir(d);
 				unlink(codePath);
-				nftw(dirPath, unlink_cb2, 64, FTW_DEPTH | FTW_PHYS);
+				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
-					return output;
+					char **r = malloc(2 * sizeof(char *));
+					r[0] = out;
+					r[1] = output;
+					return r;
 				}
 
 				free(out);
@@ -339,6 +353,6 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 
 		closedir(d);
 		unlink(codePath);
-		nftw(dirPath, unlink_cb2, 64, FTW_DEPTH | FTW_PHYS);
+		nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 		return NULL;
 }
