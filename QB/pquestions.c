@@ -13,7 +13,7 @@
 #include "mode.h"
 
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-	if (fpath == "./code/code.c" || fpath == "./code" || fpath == "./code.py") {
+	if (strcmp(fpath + 14, "code") == 0 || strcmp(fpath + 14, "code.py") == 0) {
 		return 0;
 	}
 	int rv = remove(fpath);
@@ -54,7 +54,7 @@ char* readTextFile(char *path) {
 
 //Returns NULL if lastAttempt = 0, else returns output.
 //Modifies completed to be 1 if succeeded, 0 if not
-char** testCode(char *completed, char *path, char lastAttempt, char **in, char *expectedOut, char *expectedImage) {
+char** testCode(char *completed, char *path, char lastAttempt, char *in[], char *expectedOut, char *expectedImage) {
 	int thepipe[2];
 
 	if (pipe(thepipe) != 0) {
@@ -252,7 +252,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				
 
 				//Create array with count + 1
-				char **inArgs = malloc((count + 1) * sizeof(char *));
+				inArgs = malloc((count + 1) * sizeof(char *));
 
 				int i = 1;
 				if (PROGRAM_MODE == PYTHON) {
@@ -266,7 +266,8 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				//strtok all values to array
 				char *token = strtok(in, "\n");
 				while (token != NULL) {
-					inArgs[i] = token;
+					printf("%i - %s\n",i , token);
+					inArgs[i] = strdup(token);
 					i += 1;
 					token = strtok(NULL, "\n");
 				}
@@ -292,7 +293,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 			char ret;
 			printf("TESTING...\n");
 			char **output = testCode(&ret, codePath, lastAttempt, inArgs, out, png);
-			nftw(dirPath, unlink_cb2, 64, FTW_DEPTH | FTW_PHYS);
+			nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 			//printf("%s\n", output[1]);
 
 			//Free provided data
@@ -303,7 +304,7 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 				*completed = 0;
 				closedir(d);
 				unlink(codePath);
-				nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+				nftw(dirPath, unlink_cb2, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
 					return output;
 				}
@@ -319,6 +320,6 @@ char** compileCode(char* completed, char* question, char* code, char lastAttempt
 
 		closedir(d);
 		unlink(codePath);
-		nftw(dirPath, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+		nftw(dirPath, unlink_cb2, 64, FTW_DEPTH | FTW_PHYS);
 		return NULL;
 }

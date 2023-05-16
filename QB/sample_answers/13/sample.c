@@ -6,5 +6,5 @@ int main(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         count += strlen(argv[i]);
     }
-    printf("%i\n", count);
+    printf("%i", count);
 }

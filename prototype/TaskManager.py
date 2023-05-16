@@ -21,7 +21,7 @@ def CheckAnswerRequest(s, seedIndex, seed, last_attempt, student_answer):
         + struct.pack("c", seedIndex.to_bytes(1, 'big')) + struct.pack("q", seed)
         + struct.pack("c", last_attempt.to_bytes(1, 'big')) + bytes(student_answer, "utf-8")))
 
-f = open("../QB/c/sample_answers/1/sample.c")
+f = open("../QB/sample_answers/1/sample.py")
 text = f.read()
 f.close()
 CheckAnswerRequest(conn, 3, 1231, 1, text)
@@ -30,7 +30,7 @@ while True:
     data = conn.recv(1024)
     if not data:
         break
-    print(data[1])
+    print(data)
 
 conn.close()
 s.close()

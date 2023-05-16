@@ -1,4 +1,4 @@
-1,0,Write a C program to print the length of all it's inputs.
+1,0,Write a program to make a gradient image in python
 2,4,What is 1+1?,1\;2\;3\;4
 3,4,What is size of int on a 32 bit device?,10\;8\;4\;1
 4,3,Which is the wrong way to initialise a string with 8 characters?,char s[8]="a string"\;char s[]="a string"\;const char* s = "a string"
@@ -10,4 +10,4 @@
 10,3,What does fopen() function return in c?.,a file pointer\;an integer file descriptor\;a string of data
 11,0,Write a program to reverse a given integer list.
 12,0,Write a program to print 1+1 in c.
-13,0,Write a program to make a gradient image in python
+13,0,Write a C program to print the length of all it's inputs.

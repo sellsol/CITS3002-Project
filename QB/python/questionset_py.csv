@@ -1,4 +1,4 @@
-1,0,Write a function that returns 1+1,stdout
+1,0,Write a program in python to make a 255 x 255 pure green image. You may use the png libary.
 2,4,Which function data type is immutable?,set\;list\;tuple\;dictionary
 3,4,What does type(1) return?,int\;float\;double\;char
 4,2,Does python use a compiler to run programs?,True\;False
