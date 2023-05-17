@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
 	//Use argv to determine QB mode
 	int c;
-	while ((c = getopt(argc, argv, "c:p")) != -1) {
+	while ((c = getopt(argc, argv, "cp")) != -1) {
 		switch (c) {
 			case 'c':
 				if (PROGRAM_MODE == NONE) {

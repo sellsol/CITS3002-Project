@@ -123,9 +123,13 @@ def GenQuestionsRequest(qb_index, numQuestions, seed):
         for recv_data in list(data_received.queue):
             if recv_data[0] == addr:
                 print(f"Received data from {addr}")
-                
                 # deserialise reply
-                received = data_received.get()[1].decode('utf-8').split("\;")
+                rawReceived = data_received.get()[1] 
+                header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                rawReceived = rawReceived[4:]
+
+                received = rawReceived.decode('utf-8').split("\;")
+                print(received)
                                 
                 questions = received[:numQuestions]
                 types = received[numQuestions : 2 * numQuestions]
@@ -154,6 +158,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 return data_received.get()[1].decode('utf-8')
             
 def test_ready():
+    print(num_qbs)
     qbs_ready = 0
     for qb in list(qbs.queue):
         if qb != None:
