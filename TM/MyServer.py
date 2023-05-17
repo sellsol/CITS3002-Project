@@ -31,6 +31,31 @@ class MyServer(BaseHTTPRequestHandler):
                 with open("questions.html", "r") as f:
                     html = f.read()
                     self.wfile.write(bytes(html, "utf-8"))
+        elif self.path == "/styles.css":
+            self.send_response(200)
+            self.send_header("Content-type", "text/css")
+            self.end_headers()
+
+            with open("styles.css", "r") as f:
+                css = f.read()
+                self.wfile.write(bytes(css, "utf-8"))
+
+        elif self.path == "/login_script.js":
+            self.send_response(200)
+            self.send_header("Content-type", "text/javascript")
+            self.end_headers()
+
+            with open("login_script.js", "r") as f:
+                js = f.read()
+                self.wfile.write(bytes(js, "utf-8"))
+        elif self.path == "/questions_script.js":
+            self.send_response(200)
+            self.send_header("Content-type", "text/javascript")
+            self.end_headers()
+
+            with open("questions_script.js", "r") as f:
+                js = f.read()
+                self.wfile.write(bytes(js, "utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
