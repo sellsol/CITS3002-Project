@@ -53,8 +53,6 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     if(strcmp(type, "c") == 0){ // coding questions
         printf("Marking question %i...\n", ids[index]);
 
-        free(ids);
-
         outputs = compileCode(&is_correct, num,answer,lastAttempt);
 
         /*struct FileData codeOutput = {sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1, NULL};
@@ -112,7 +110,8 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     //Format??: char 't/f', expected output, string seperator, output
     char correct = (is_correct) ? 't' : 'f';
     struct FileData outputStr;
-    if (lastAttempt == 1) {
+
+    if (lastAttempt == 1 && is_correct == 0) {
         outputStr.len = sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1;
         outputStr.data = calloc(outputStr.len, sizeof(char));
 
@@ -125,7 +124,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
         memcpy(outputStr.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
         memcpy(outputStr.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
 
-        printf("\nSending string:%s\n", outputStr.data);
+        printf("\nSending long string:%s\n", outputStr.data);
     } else {
         outputStr.len = sizeof(char);
         outputStr.data = malloc(sizeof(char));

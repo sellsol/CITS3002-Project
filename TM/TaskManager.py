@@ -156,19 +156,19 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 # deserialise reply
                 rawReceived = data_received.get()[1] 
                 
-                header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                header = int.from_bytes(rawReceived[:4], byteorder = "little")
                 print("length = " + str(header)) #debug
                 rawReceived = rawReceived[4:]
                 is_correct = rawReceived.decode('utf-8')[0] == 't'
 
                 if not is_correct and is_last_attempt:
-                    header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                    header = int.from_bytes(rawReceived[:4], byteorder = "little")
                     print("header 1 = " + str(header)) #debug
                     rawReceived = rawReceived[4:]
                     sample_output = rawReceived[:header].decode('utf-8')
                     rawReceived = rawReceived[header:]
                     
-                    header = int.from_bytes(rawReceived[:4], byteorder = "big")
+                    header = int.from_bytes(rawReceived[:4], byteorder = "little")
                     print("header 2 = " + str(header)) #debug
                     rawReceived = rawReceived[4:]
                     student_output = rawReceived[:header].decode('utf-8')
