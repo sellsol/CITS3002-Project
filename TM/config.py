@@ -1,6 +1,6 @@
 # Config
 # bounds for TM
-num_questions = 3
+num_questions = 10
 num_qbs = 2
 
 # TM databases

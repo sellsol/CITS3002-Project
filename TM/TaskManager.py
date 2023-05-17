@@ -129,7 +129,7 @@ def GenQuestionsRequest(qb_index, numQuestions, seed):
                 rawReceived = rawReceived[4:]
 
                 received = rawReceived.decode('utf-8').split("\;")
-                print(received)
+                #print(received)
                                 
                 questions = received[:numQuestions]
                 types = received[numQuestions : 2 * numQuestions]
@@ -154,8 +154,10 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 print(f"Received data from {addr}")    
                 
                 # deserialise reply TBC
-                print(data_received).get()[1].decode('utf-8')
-                return data_received.get()[1].decode('utf-8')
+                received = data_received.get()[1].decode('utf-8')
+
+                is_correct = received[0] == 't'
+                return is_correct
             
 def test_ready():
     print(num_qbs)

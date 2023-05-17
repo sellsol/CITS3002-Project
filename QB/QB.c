@@ -46,7 +46,7 @@ char* recvAll(int s) {
 	if (ret == -1) {
 		return NULL;
 	}
-	char *msg = malloc(len); //Error handle here
+	char *msg = calloc(len, sizeof(char)); //Error handle here
 	//len = ntohl(len); Don't know what beej was thinking, this shit just breaks everything
 	
 	char *index = msg; //Create an index to trawl across allocated memory

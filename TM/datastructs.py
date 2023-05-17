@@ -63,8 +63,9 @@ def check_answer(username, question_index, student_answer, attempts):
     # calls the relevant QB and asks to check
     is_last_attempt = attempts == 2
     portnum, q_index = q_to_qb(question_index)
+    seed = int(hashlib.sha256(username.encode('utf-8')).hexdigest(), 16) % 10**8
 
-    return QB_check_question(username, portnum, q_index, student_answer, is_last_attempt)
+    return CheckAnswerRequest(portnum, q_index, seed, attempts, student_answer)
 
 
 # creates new student entry in the TM_database
@@ -118,12 +119,3 @@ def q_to_qb(q):
         if q >= start and q <=end:
             return i, q - start
     return
-
-
-# PLACEHOLDER func that checks an answer with a QB
-def QB_check_question(username, portnum, q_index, is_last_attempt, student_answer):    
-    if is_last_attempt:
-        # return in form is_correct, student_output, sample_output
-        return False#, student_answer, "placeholder checked_output"
-    else:
-        return False

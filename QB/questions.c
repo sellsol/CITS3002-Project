@@ -39,6 +39,7 @@ int* question_ids(int num, uint64_t seed){
         }
         if(unique)++i;
     }
+
     return ids;
 }
 
@@ -56,7 +57,7 @@ char *a_question(char *filename,int line_index) {
     //Opens file we're reading
     FILE *fp = fopen(filename,"r");
 
-    int line_num = 0;
+    int line_num = 1;
 
     //Read lines until we get the one we're looking for
     char *buffer = malloc(MAX_LINE_LEN);
@@ -118,7 +119,7 @@ char* get_questions(uint64_t seed, char num){
         line = line+1;
 
         //question string if not coding
-        if(type!='0'){
+        if(type!='c'){
             ans = strstr(line,sep);
             int q_position = ans - line;
             ques = strndup(line,q_position);
@@ -129,25 +130,29 @@ char* get_questions(uint64_t seed, char num){
         }
         
         //adding substrings to respective strings
-        if(type=='0'){
+        if(type == 'c'){
             strncat(ques_type_ans[0],ques,strlen(ques)-1);//removing trailing \n for coding ques
-        }else {strncat(ques_type_ans[0],ques,strlen(ques));}
-        if(type!= '0'){
+        } else {
+            strncat(ques_type_ans[0],ques,strlen(ques));
+        }
+        strncat(ques_type_ans[0],q_sep,strlen(q_sep));
+
+        if (type!= 'c') {
             strncat(ques_type_ans[2],ans,strlen(ans)-1); //removing trailing \n for mcq answers
         }
-        strncat(ques_type_ans[1],&type,1);
+        strncat(ques_type_ans[2],q_sep,strlen(q_sep));
+
+        strncat(ques_type_ans[1], &type,1);
+        strncat(ques_type_ans[1], q_sep, strlen(q_sep));
 
         //adding seperators
 
         // if(i!=num-1){ //last entry does not have question seperator
-        strncat(ques_type_ans[0],q_sep,strlen(q_sep));
-        if(type!='0'){ //no seperators together
-            strncat(ques_type_ans[2],q_sep,strlen(q_sep));
-        } 
+
         ++i;
     }
 
-    strncat(ques_type_ans[1],q_sep,strlen(q_sep));
+    //strncat(ques_type_ans[1],q_sep,strlen(q_sep));
 
     // printf("%s\n",ques_type_ans[1]);
     // printf("%s\n",ques_type_ans[0]);

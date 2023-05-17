@@ -1,11 +1,11 @@
-1,0,Write a program in python to make a 255 x 255 pure green image. You may use the png libary.
-2,4,Which function data type is immutable?,set\;list\;tuple\;dictionary
-3,4,What does type(1) return?,int\;float\;double\;char
-4,2,Does python use a compiler to run programs?,True\;False
-5,0,Write a function that returns "a string" repeated 5 times - spaces seperate all words.,stdout = "a string a string a string a string a string"
-6,3,Which function will convert a string to have all capital letters?,capitalize()\;upper()\;title()
-7,0,Write a function third_elem(list) that prints the 3rd element of a list (assume lists have atleast 3 elements).,print(third_elem(["Germany","France","Austria","Berlin"]))="Austria"
-8,3,A population of 100 flies doubles every day. How many will it take for the population to pass 1000000?,12\;13\;14
-9,0,A bus has 5 stops. Two lists depict the people who get on and off at a stop. People get off before people get on. Write a function bus_people(get_on, get_off) that returns a list of the number of people left on a bus.,print(bus_people([3,4,5,3,0],[0,2,1,5,4]))=[3,5,6,4,0]
-10,4,Which function can be used to find the length of a list in Python?,length(list)\;len(list)\;size(list)\;list.sizeof()
-11,2,Python is suitable for low-level implementations.,True\;False
+1,c,Write a function that returns 1+1,stdout
+2,m,Which function data type is immutable?,set\,list\,tuple\,dictionary
+3,m,What does type(1) return?,int\,float\,double\,char
+4,m,Does python use a compiler to run programs?,True\,False
+5,c,Write a function that returns "a string" repeated 5 times - spaces seperate all words.,stdout = "a string a string a string a string a string"
+6,m,Which function will convert a string to have all capital letters?,capitalize()\,upper()\,title()
+7,c,Write a function third_elem(list) that prints the 3rd element of a list (assume lists have atleast 3 elements).,print(third_elem(["Germany","France","Austria","Berlin"]))="Austria"
+8,m,A population of 100 flies doubles every day. How many will it take for the population to pass 1000000?,12\,13\,14
+9,c,A bus has 5 stops. Two lists depict the people who get on and off at a stop. People get off before people get on. Write a function bus_people(get_on, get_off) that returns a list of the number of people left on a bus.,print(bus_people([3,4,5,3,0],[0,2,1,5,4]))=[3,5,6,4,0]
+10,m,Which function can be used to find the length of a list in Python?,length(list)\,len(list)\,size(list)\,list.sizeof()
+11,m,Python is suitable for low-level implementations.,True\,False
