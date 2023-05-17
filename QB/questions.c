@@ -128,11 +128,6 @@ char* get_questions(uint64_t seed, char num){
             ques = line;
         }
         
-        //debugging
-        // printf("%c\n",type);
-        // printf("%s\n",ques);
-        // printf("%s\n",ans);
-
         //adding substrings to respective strings
         if(type=='0'){
             strncat(ques_type_ans[0],ques,strlen(ques)-1);//removing trailing \n for coding ques
@@ -225,3 +220,13 @@ char* get_questions(uint64_t seed, char num){
 //     //do something with sending str
 //     return 0;
 // }
+char* genQuestionsReply(int numQuestions, int seed) {
+    int ques = get_questions(prog_lang, seed, numQuestions);
+
+    char *sending_txt = malloc(BUFSIZ);
+    sprintf(sending_txt, "%s%s%s", ques_types_ans[0], ques_types_ans[1], ques_types_ans[2]);
+
+    free(ques_types_ans);
+
+    return sending_txt;
+}

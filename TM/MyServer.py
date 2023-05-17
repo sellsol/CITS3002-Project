@@ -1,21 +1,36 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.cookies import SimpleCookie
 from urllib.parse import unquote
 import json
+from config import *
+from authentication import *
+from datastructs import *
 
-hostName = "localhost"
-serverPort = 8080
-
-class MyServer(BaseHTTPRequestHandler):
+class MyServer(BaseHTTPRequestHandler):            
     # Builds the html page
     def do_GET(self):
         if self.path == "/":
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
+            cookie = SimpleCookie(self.headers.get("Cookie"))
+            username = cookie.get("username")
                         
-            with open("index.html", "r") as f:
-                html = f.read()
-                self.wfile.write(bytes(html, "utf-8"))
+            if not test_ready():
+                print("student connected while test not ready")
+                with open("qb_error.html", "r") as f:
+                    html = f.read()
+                    self.wfile.write(bytes(html, "utf-8"))
+            elif username is None:
+                print("unlogged in student connected")
+                with open("login.html", "r") as f:
+                    html = f.read()
+                    self.wfile.write(bytes(html, "utf-8"))
+            else:
+                print("student logged in")
+                with open("questions.html", "r") as f:
+                    html = f.read()
+                    self.wfile.write(bytes(html, "utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -29,80 +44,58 @@ class MyServer(BaseHTTPRequestHandler):
             username = data["username"]
             password = data["password"]
             
-            if validate_student(username, password):
+            if validate_student(loginFile ,username, password):
+                print("\tLogged in: " + username)
+                                
+                cookie = SimpleCookie()
+                cookie["username"] = username
+                cookie["username"]["path"] = "/"
+                cookie["username"]["max-age"] = 3600
+                                
                 self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
-
-                # Get questions
-                questions = get_questions(username)
-                print(questions)
-                #questions_json = json.dumps(questions)
-                
-                # Send success and questions data
-                response = {"success": True, "questions": questions}
-                self.wfile.write(json.dumps(response).encode("utf-8"))
+                self.send_header("Location", "/")
+                self.send_header("Set-Cookie", cookie.output(header=""))
+                self.end_headers() 
             else:
-                self.send_response(200)
+                self.send_response(401)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False}).encode("utf-8"))
-                
+        elif self.path == "/get-data":
+            cookie = SimpleCookie(self.headers.get("Cookie"))
+            username = cookie.get("username")
+            self.send_response(200)
+            self.send_header("Content-types", "application/json")
+            self.end_headers()
+            questions, types, choices = get_questions(username.value)
+            current_finished, current_marks, attempts, marks = get_answers(username.value)
+            response = {"success": True, "username": username.value, "questions": questions, "types": types, 
+                        "choices": choices, "current_finished": current_finished, 
+                        "current_marks": current_marks, "attempts": attempts, "marks": marks}
+            self.wfile.write(json.dumps(response).encode("utf-8"))
         elif self.path == "/submit-answer":
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             data = body.decode("utf-8")
-            answer, pos = data.split(":")
+            username, answer, pos, attempts = data.split(":")
             answer = unquote(answer)
             
-            # TODO: Do something with this data
-            print("Answer: " + answer)
-            print("Question Number: " + pos)
+            print("\tUsername: " + username)
+            print("\tQuestion Index: " + pos)
+            print("\tAnswer: " + answer)
             
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(bytes("Answer received: " + answer, "utf-8"))
+            
+            response = {"success": True, "correct": check_answer(username, int(pos), answer, int(attempts))} 
+            self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
 
-
-# !!!PLACEHOLDER FUNCTION
-def validate_student(username, password):
-    return True
-
-# !!!PLACEHOLDER FUNCTION
-def get_questions(username):
-    if (username == "username1"):
-        questions = [
-            "What is the capital of France?",
-            "What is the largest country in the world?",
-            "What is the highest mountain in the world?"
-        ]
-    elif (username == "username2"):
-        questions = [
-            "What is the currency of Japan?",
-            "What is the largest desert in the world?",
-            "What is the deepest ocean in the world?"
-        ]
-    else:
-        questions = [
-            "What is the capital of Canada?",
-            "What is the smallest country in the world?",
-            "What is the fastest land animal in the world?"
-        ]
-    return questions
-
-
-if __name__ == "__main__":
-    # Makes a server object
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    webServer.server_close()
-    print("Server stopped.")
+    # handles when user browser unexpectedly closes
+    def handle(self):
+        try:
+            BaseHTTPRequestHandler.handle(self)
+        except socket.error:
+            pass

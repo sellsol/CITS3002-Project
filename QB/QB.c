@@ -208,10 +208,4 @@ int main(int argc, char **argv) {
 
 		free(msg);
 	}
-
-	close(sockfd);
-
-	freeaddrinfo(res);
-
-	return 0;
 }
