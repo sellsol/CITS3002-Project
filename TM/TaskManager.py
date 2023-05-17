@@ -159,11 +159,13 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 print(f"Received data from {addr}")    
                 
                 # deserialise reply
-                rawReceived = data_received.get()[1] 
+                rawReceived = data_received.get()[1]
                 
                 is_correct = rawReceived.decode('utf-8')[0] == 't'
 
                 if not is_correct and is_last_attempt:
+                    rawReceived = rawReceived[1:]
+
                     header = int.from_bytes(rawReceived[:4], byteorder = "little")
                     print("header 1 = " + str(header)) #debug
                     rawReceived = rawReceived[4:]

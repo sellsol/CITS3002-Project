@@ -120,11 +120,15 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
                 //length of output, output
         memcpy(outputStr.data, &correct, sizeof(char));
         memcpy(outputStr.data + sizeof(char), &outputs[0].len, sizeof(int));
-        memcpy(outputStr.data + sizeof(char) + sizeof(int), outputs[0].data, outputs[0].len);
-        memcpy(outputStr.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
-        memcpy(outputStr.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
+        memcpy((unsigned char *)outputStr.data + sizeof(char) + sizeof(int), outputs[0].data, outputs[0].len);
+        memcpy((unsigned char *)outputStr.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
+        memcpy((unsigned char *)outputStr.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
 
-        printf("\nSending long string:%s\n", outputStr.data);
+        printf("\nSending long string:");
+        for (int i = 0; i < outputStr.len; i++) {
+            printf("%c|", outputStr.data[i]);
+        }
+        printf("\n");
     } else {
         outputStr.len = sizeof(char);
         outputStr.data = malloc(sizeof(char));
