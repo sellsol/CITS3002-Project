@@ -71,6 +71,13 @@ def ServiceConnection(key, mask):
     if mask & selectors.EVENT_READ:
         # something came in from socket
         recv_data = sock.recv(1024)
+        got = 1024
+        length_header = int.from_bytes(recv_data[:4], byteorder = "little")
+        recv_data = recv_data[4:]
+        while got < length_header:
+            recv_data += sock.recv(1024)
+            got += 1024
+        
         if recv_data:
             # data received from the socket
             data_received.put((data.addr, recv_data))
@@ -125,8 +132,6 @@ def GenQuestionsRequest(qb_index, numQuestions, seed):
                 print(f"Received data from {addr}")
                 # deserialise reply
                 rawReceived = data_received.get()[1] 
-                header = int.from_bytes(rawReceived[:4], byteorder = "big")
-                rawReceived = rawReceived[4:]
 
                 received = rawReceived.decode('utf-8').split("\;")
                 #print(received)
@@ -156,9 +161,6 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 # deserialise reply
                 rawReceived = data_received.get()[1] 
                 
-                header = int.from_bytes(rawReceived[:4], byteorder = "little")
-                print("length = " + str(header)) #debug
-                rawReceived = rawReceived[4:]
                 is_correct = rawReceived.decode('utf-8')[0] == 't'
 
                 if not is_correct and is_last_attempt:
