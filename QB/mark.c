@@ -34,7 +34,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     }
 
     //checking q_type
-    char*line=a_question(filename,ids[index]);
+    char*line=a_question(filename,ids[index]); //SHould free it
     //printf("%s\n",line);
 
     //Get question type (i.e number of options)
@@ -51,6 +51,8 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
         char*question;
         sprintf(question,"%d",ids[index]);
         printf("Marking question %i...\n", ids[index]);
+
+        free(ids);
 
         char returnCode;
         struct FileData *outputs = compileCode(&returnCode,question,answer,lastAttempt);
@@ -102,6 +104,8 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     sprintf(mChoiceOutput.data, "%c%s%s%s%s", correct, output[0], str_sep, output[1]);
     
     printf("\nSending string:\n%s\n", mChoiceOutput.data);
+
+    free(ids);
 
     return mChoiceOutput;
 }
