@@ -19,7 +19,7 @@ def get_questions(username):
         choices.extend(ret_choices)
         
     return questions, types, choices
-
+  
 # reads current answers info for this student from the TM_database
 def get_answers(username):
     current_finished = 0
