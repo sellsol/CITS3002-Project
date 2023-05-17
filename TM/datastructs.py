@@ -65,6 +65,8 @@ def check_answer(username, question_index, student_answer, attempts):
     portnum, q_index = q_to_qb(question_index)
     seed = int(hashlib.sha256(username.encode('utf-8')).hexdigest(), 16) % 10**8
 
+    #TBC update answers
+
     return CheckAnswerRequest(portnum, q_index, seed, attempts, student_answer)
 
 

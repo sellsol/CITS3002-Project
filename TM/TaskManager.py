@@ -184,7 +184,6 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                     return is_correct
             
 def test_ready():
-    print(num_qbs)
     qbs_ready = 0
     for qb in list(qbs.queue):
         if qb != None:
