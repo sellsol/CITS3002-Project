@@ -74,19 +74,22 @@ char *a_question(char *filename,int line_index) {
 }
 
 /*
-* modifies sending string to have the fully serialised string with questions,types,answers
+* sends questions string back
 */
-int get_questions(char*sending_str,uint32_t seed, int num){
+char* get_questions(uint32_t seed, char num){
 
-    char **ques_types_ans; //pointer to question, types, and answer 
-    ques_types_ans = realloc(ques_types_ans, (NUM_QAT_STRINGS + 1) * sizeof(ques_types_ans[0]));
+    char **ques_type_ans; //pointer to question, types, and answer 
+    ques_type_ans = malloc((NUM_QAT_STRINGS + 1) * sizeof(char *));
+    //ques_type_ans[0] refers to questions, [1] refers to types, [2] refers to answers
+    ques_type_ans[0] = calloc(BUFSIZ, sizeof(char));
+    ques_type_ans[1] = calloc(BUFSIZ, sizeof(char));
+    ques_type_ans[2] = calloc(BUFSIZ, sizeof(char));
+    
 
-    int*ids = malloc(num*sizeof(int));
+    int*ids = malloc(num*sizeof(int)); //Should not be doing this
     int get_ids = question_ids(ids,num,seed);
 
-    char questions[BUFSIZ];
-    char answers[BUFSIZ];
-    char types[BUFSIZ];
+
     char*q_sep = "\\;"; //question seperator
     char *sep = ","; //general csv seperator
 
@@ -132,40 +135,41 @@ int get_questions(char*sending_str,uint32_t seed, int num){
 
         //adding substrings to respective strings
         if(type=='0'){
-            strncat(questions,ques,strlen(ques)-1);//removing trailing \n for coding ques
-        }else {strncat(questions,ques,strlen(ques));}
+            strncat(ques_type_ans[0],ques,strlen(ques)-1);//removing trailing \n for coding ques
+        }else {strncat(ques_type_ans[0],ques,strlen(ques));}
         if(type!= '0'){
-            strncat(answers,ans,strlen(ans)-1); //removing trailing \n for mcq answers
+            strncat(ques_type_ans[2],ans,strlen(ans)-1); //removing trailing \n for mcq answers
         }
-        strncat(types,&type,1);
+        strncat(ques_type_ans[1],&type,1);
 
         //adding seperators
 
         // if(i!=num-1){ //last entry does not have question seperator
-        strncat(questions,q_sep,strlen(q_sep));
+        strncat(ques_type_ans[0],q_sep,strlen(q_sep));
         if(type!='0'){ //no seperators together
-            strncat(answers,q_sep,strlen(q_sep));
+            strncat(ques_type_ans[2],q_sep,strlen(q_sep));
         } 
         ++i;
     }
 
-    strncat(types,q_sep,strlen(q_sep));
+    strncat(ques_type_ans[1],q_sep,strlen(q_sep));
 
-    ques_types_ans[0] = strdup(questions);
-    ques_types_ans[1] = strdup(types);
-    ques_types_ans[2] = strdup(answers);
-
-    // printf("%s\n",ques_types_ans[1]);
-    // printf("%s\n",ques_types_ans[0]);
-    // printf("%s\n",ques_types_ans[2]);
+    // printf("%s\n",ques_type_ans[1]);
+    // printf("%s\n",ques_type_ans[0]);
+    // printf("%s\n",ques_type_ans[2]);
 
     /*
     * Serialising
     */
-    char *sending_txt = malloc(strlen(ques_types_ans[0])+strlen(ques_types_ans[1])+strlen(ques_types_ans[2]));
-    memcpy(sending_txt,ques_types_ans[0],strlen(ques_types_ans[0]));
-    memcpy(sending_txt+strlen(ques_types_ans[0]),ques_types_ans[1],strlen(ques_types_ans[1]));
-    memcpy(sending_txt+strlen(ques_types_ans[0])+strlen(ques_types_ans[1]),ques_types_ans[2],strlen(ques_types_ans[2]));
+    char *sending_txt = calloc(strlen(ques_type_ans[0])+strlen(ques_type_ans[1])+strlen(ques_type_ans[2]), sizeof(char));
+    memcpy(sending_txt,ques_type_ans[0],strlen(ques_type_ans[0]));
+    memcpy(sending_txt+strlen(ques_type_ans[0]),ques_type_ans[1],strlen(ques_type_ans[1]));
+    memcpy(sending_txt+strlen(ques_type_ans[0])+strlen(ques_type_ans[1]),ques_type_ans[2],strlen(ques_type_ans[2]));
+    strcat(sending_txt, "\0");
+
+    free(ques_type_ans[0]);
+    free(ques_type_ans[1]);
+    free(ques_type_ans[2]);
 
     /*
     int length = strlen(sending_txt);
@@ -180,7 +184,7 @@ int get_questions(char*sending_str,uint32_t seed, int num){
     strncat(sending_str,sep,strlen(sep));
     strncat(sending_str,sending_txt,length);*/
 
-    return 0;
+    return sending_txt;
 }
 
 // int main(int num,int64_t seed){

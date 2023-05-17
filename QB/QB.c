@@ -43,7 +43,6 @@ int sendAll(int s, char *buf, int len) {
 char* recvAll(int s) {
 	int len; //Header describing the length of the message
 	int ret = recv(s, &len, sizeof(len), 0); //Get length of message
-	printf("%i\n", len);
 	if (ret == -1) {
 		return NULL;
 	}
@@ -144,16 +143,19 @@ int main(int argc, char **argv) {
 		//Possibly make this a switch?
 		if (msg[0] == 'G') { //Generate questions request
 			char numQuestions = msg[1];
-			int64_t seed;
-			memcpy(&seed, msg + 2, sizeof(int64_t));
-			
+			uint64_t seed;
+			memcpy(&seed, msg + 2, sizeof(uint64_t));
+			char *output = get_questions(seed, numQuestions);
+			sendAll(sockfd, output, strlen(output));
+
+			free(output);
 			
 		} else if (msg[0] == 'C') { //Check questions request
 
 			//Disects request data
 			char questionIndex = msg[1];
-			int64_t seed;
-			memcpy(&seed, msg + 2, sizeof(int64_t));
+			uint64_t seed;
+			memcpy(&seed, msg + 2, sizeof(uint64_t));
 			char lastAttempt = msg[10];
 			char *answer = msg + 11;
 
