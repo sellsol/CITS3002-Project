@@ -31,6 +31,31 @@ class MyServer(BaseHTTPRequestHandler):
                 with open("questions.html", "r") as f:
                     html = f.read()
                     self.wfile.write(bytes(html, "utf-8"))
+        elif self.path == "/styles.css":
+            self.send_response(200)
+            self.send_header("Content-type", "text/css")
+            self.end_headers()
+
+            with open("styles.css", "r") as f:
+                css = f.read()
+                self.wfile.write(bytes(css, "utf-8"))
+
+        elif self.path == "/login_script.js":
+            self.send_response(200)
+            self.send_header("Content-type", "text/javascript")
+            self.end_headers()
+
+            with open("login_script.js", "r") as f:
+                js = f.read()
+                self.wfile.write(bytes(js, "utf-8"))
+        elif self.path == "/questions_script.js":
+            self.send_response(200)
+            self.send_header("Content-type", "text/javascript")
+            self.end_headers()
+
+            with open("questions_script.js", "r") as f:
+                js = f.read()
+                self.wfile.write(bytes(js, "utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -90,8 +115,8 @@ class MyServer(BaseHTTPRequestHandler):
             print("\tAnswer: " + answer)
             self.send_response(200)
             self.end_headers()
-            
-            response = {"success": True, "correct": check_answer(username, int(pos), answer, int(attempts))} 
+            correct, correct_answer = check_answer(username, int(pos), answer, int(attempts))
+            response = {"success": True, "correct": correct, "answer": correct_answer}
             self.wfile.write(json.dumps(response).encode("utf-8"))
         elif self.path == "/get-data":
             cookie = SimpleCookie(self.headers.get("Cookie"))
