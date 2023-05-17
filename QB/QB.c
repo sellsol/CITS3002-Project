@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 			char lastAttempt = msg[10];
 			char *answer = msg + 11;
 
-			printf("Request to check questions with data %d, %016llX, %d, %s\n", questionIndex, &seed, lastAttempt, answer);
+			printf("Request to check questions with data %d, %016llX, %d, %c\n", questionIndex, &seed, lastAttempt);
 
 			struct FileData response = question_correct(seed, questionIndex, lastAttempt, answer);
 			sendAll(sockfd, response.data, response.len);

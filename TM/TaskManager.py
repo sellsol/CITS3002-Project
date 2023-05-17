@@ -157,6 +157,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                 received = data_received.get()[1].decode('utf-8')
 
                 is_correct = received[0] == 't'
+                print(received)
                 return is_correct
             
 def test_ready():
