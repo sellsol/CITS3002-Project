@@ -21,8 +21,9 @@ char *C_Q = "./questions/c/questionset_c.csv"; //qb ques for c
 * Returns a list of question ids
 * The seed is the unique int that is associated with the string
 */
-int question_ids(int*ids, int num, uint32_t seed){
+int* question_ids(int num, uint64_t seed){
 
+    int *ids = malloc(num * sizeof(int));
     //generating question ids for 
     srand(seed);
 
@@ -38,7 +39,7 @@ int question_ids(int*ids, int num, uint32_t seed){
         }
         if(unique)++i;
     }
-    return 0;
+    return ids;
 }
 
 
@@ -76,7 +77,7 @@ char *a_question(char *filename,int line_index) {
 /*
 * sends questions string back
 */
-char* get_questions(uint32_t seed, char num){
+char* get_questions(uint64_t seed, char num){
 
     char **ques_type_ans; //pointer to question, types, and answer 
     ques_type_ans = malloc((NUM_QAT_STRINGS + 1) * sizeof(char *));
@@ -86,8 +87,7 @@ char* get_questions(uint32_t seed, char num){
     ques_type_ans[2] = calloc(BUFSIZ, sizeof(char));
     
 
-    int*ids = malloc(num*sizeof(int)); //Should not be doing this
-    int get_ids = question_ids(ids,num,seed);
+    int *ids = question_ids(num,seed);
 
 
     char*q_sep = "\\;"; //question seperator

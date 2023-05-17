@@ -22,7 +22,7 @@ extern char *PY_Q; //ques for python
 extern char *C_Q; //ques for c
 
 //questions.c
-extern int question_ids(int*,int,uint32_t); //a list of question ids
+extern int *question_ids(int,uint64_t); //a list of question ids
 extern char *a_question(char*,int); //Returns pointer to a questions associated with the question/line id
-extern char *get_questions(uint32_t,char); //a list with 3 strings: questions, types, answers
+extern char *get_questions(uint64_t,char); //a list with 3 strings: questions, types, answers
 #endif

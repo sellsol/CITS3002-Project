@@ -17,8 +17,7 @@ char *C_A = "c/answerset_c.csv"; //qb ans for c
 * sending string: length//;<t/f>//;(if is last attempt)expected_answer//;student_answer
 */
 struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char*answer){
-    int*ids = malloc((index+1)*sizeof(int));
-    question_ids(ids,index+1,seed);
+    int *ids = question_ids(index+1,seed);
     char *sep = ","; //general and ans seperator
 
     //printf("%d\n",ids[index]);
