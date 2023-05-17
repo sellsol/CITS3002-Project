@@ -18,6 +18,8 @@ function displayQuestion() {
   document.getElementById("current-marks").innerHTML = current_marks;
   document.getElementById("attempts").innerHTML = attempts[currentQuestion];
   document.getElementById("marks").innerHTML = marks[currentQuestion];
+  document.getElementById("current-finished-out-of").innerHTML = questions.length;
+  document.getElementById("current-marks-out-of").innerHTML = 3*questions.length;
   console.log(username);
   if (types[currentQuestion] == "c") {
     document.getElementById("multichoice-screen").style.display = "none";
