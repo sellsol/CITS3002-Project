@@ -63,7 +63,6 @@ char *a_question(char *filename,int line_index) {
     char *buffer = malloc(MAX_LINE_LEN);
     while(fgets(buffer,MAX_LINE_LEN,fp) != NULL && line_index!=line_num){
         ++line_num;
-        //if(line_num==line_index) break; //Why is this here when we have a condition up there??
     }
 
     fclose(fp);
@@ -130,16 +129,11 @@ char* get_questions(uint64_t seed, char num){
         }
         
         //adding question info to relevant strings, adding separators
-        if(type == 'c'){
-            strncat(ques_type_ans[0],ques,strlen(ques)-1);//removing trailing \n for coding ques
-        } else {
-            strncat(ques_type_ans[0],ques,strlen(ques));
-        }
+        if(type == 'c') strncat(ques_type_ans[0],ques,strlen(ques)-1);//removing trailing \n for coding ques
+        else strncat(ques_type_ans[0],ques,strlen(ques));
         strncat(ques_type_ans[0],q_sep,strlen(q_sep));
 
-        if (type!= 'c') {
-            strncat(ques_type_ans[2],ans,strlen(ans)-1); //removing trailing \n for mcq answers
-        }
+        if (type!= 'c') strncat(ques_type_ans[2],ans,strlen(ans)-1); //removing trailing \n for mcq answers
         strncat(ques_type_ans[2],q_sep,strlen(q_sep));
 
         strncat(ques_type_ans[1], &type,1);
@@ -160,6 +154,9 @@ char* get_questions(uint64_t seed, char num){
     free(ques_type_ans[0]);
     free(ques_type_ans[1]);
     free(ques_type_ans[2]);
+    //free(ques_type_ans); //TODO: intesting
+    //free(ids); //TODO: intesting
+    //free(line); //TODO: intesting (right place?) - not working, invalid free
 
     return sending_txt;
 }

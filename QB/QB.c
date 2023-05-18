@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 			uint64_t seed;
 			memcpy(&seed, msg + 2, sizeof(uint64_t));
 
-			printf("Generate questions request: seed %lu, number wanted %c\n", seed, numQuestions);
+			printf("Generate questions request: seed %lu, number wanted %d\n", seed, numQuestions);
 
 			//Creates and sends reply
 			char *output = get_questions(seed, numQuestions);
@@ -167,8 +167,8 @@ int main(int argc, char **argv) {
 			char lastAttempt = msg[10];
 			char *answer = msg + 11;
 
-			printf("Check answer request: seed %lu, index of seed %d, is last attempt %c\n", seed, questionIndex, lastAttempt);
-			printf("\tanswer:\n %s", answer);
+			printf("Check answer request: seed %lu, index of seed %d, is last attempt %d\n", seed, questionIndex, lastAttempt);
+			printf("\tanswer: %s\n", answer);
 
 			//Creates and sends reply
 			struct FileData response = question_correct(seed, questionIndex, lastAttempt, answer);

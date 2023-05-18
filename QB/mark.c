@@ -35,7 +35,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
 
     //checking q_type
     char*line=a_question(filename,ids[index]); //Should free it
-    printf("%s\n", line);
+    printf("\tquestion info: %s", line);
 
     //Get question type (i.e number of options)
     //line=strstr(line,sep);
@@ -83,7 +83,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
 
 
         FILE *fp = fopen(ans_file,"r");
-        printf("Opened file %s\n", ans_file);
+        //printf("Opened file %s\n", ans_file);
         while(fgets(ans_line,sizeof(ans_line),fp) != NULL){
             int q_ind;
 
@@ -93,7 +93,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
             if(q_ind==ids[index]){
                 outputs[0].data = strtok(NULL, "\n");
                 outputs[0].len = strlen(outputs[0].data);
-                printf("%s - %s\n", outputs[0].data, outputs[1].data);
+                //printf("%s - %s\n", outputs[0].data, outputs[1].data);
                 if(strcmp(outputs[0].data, outputs[1].data) == 0) {
                     is_correct = 1;
                 }
@@ -124,39 +124,22 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
         memcpy((unsigned char *)outputStr.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
         memcpy((unsigned char *)outputStr.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
 
+        /*
         printf("\nSending long string:");
         for (int i = 0; i < outputStr.len; i++) {
             printf("%c|", outputStr.data[i]);
         }
         printf("\n");
+        */
     } else {
         outputStr.len = sizeof(char);
         outputStr.data = malloc(sizeof(char));
         *outputStr.data = correct;
-        printf("\nSending string:%c\n", *outputStr.data);
+        printf("Sending reply: %c\n", *outputStr.data);
     }
 
     free(ids);
+    //free(line); //TODO: right place?
 
     return outputStr;
 }
-
-//debugging
-// int main(int index,int seed, int last_attempt){
-//     index = 5;
-//     seed = 12;
-//     last_attempt = 1;
-    
-//     char prog_lang = 'p';
-//     char*answer="int";
-//     char*sending_str;
-//     bool correct = question_correct(sending_str,prog_lang,index,seed,last_attempt,answer);
-//     // if(correct){
-//     //     printf("%s\n","Correct!");
-//     // }else{
-//     //     printf("%s\n","Wrong :(");
-//     // }
-//     printf("\nSending string:\n%s\n",sending_str);
-//     return 0;
-//     free(sending_str);
-// }

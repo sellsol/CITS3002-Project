@@ -162,10 +162,10 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
                     rawReceived = rawReceived[4:]
                     student_output = rawReceived[:header].decode('utf-8')
                     
-                    print("is_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
+                    print("\tis_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
                     return is_correct#, sample_output, student_output
                 else:
-                    print("is_correct = " + str(is_correct))
+                    print("\tis_correct = " + str(is_correct))
                     return is_correct
             
 def test_ready():
