@@ -79,13 +79,13 @@ class MyServer(BaseHTTPRequestHandler):
                 self.send_header("Set-Cookie", cookie.output(header=""))
                 self.end_headers()
                 
-                print("\tStudent logged in: " + username)
+                print("\tStudent logged in - Username: " + username)
             else:
                 self.send_response(401)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False}).encode("utf-8"))
-                print("\tStudent failed to login: " + username)
+                print("\tStudent failed to login - Username: "  + username)
         elif self.path == "/get-data":
             cookie = SimpleCookie(self.headers.get("Cookie"))
             username = cookie.get("username")
@@ -100,7 +100,7 @@ class MyServer(BaseHTTPRequestHandler):
                         "choices": choices, "current_finished": current_finished, 
                         "current_marks": current_marks, "attempts": attempts, "marks": marks}
             self.wfile.write(json.dumps(response).encode("utf-8"))
-            print("\tStudent's questions loaded")
+            print("\tStudent's questions loaded - Username: " + username.value)
         elif self.path == "/submit-answer":
             if (not test_ready()):
                 self.send_response(503)

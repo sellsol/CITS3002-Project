@@ -33,11 +33,13 @@ function displayQuestion() {
     document.getElementById("multichoice-screen").style.display = "none";
     document.getElementById("coding-screen").style.display = "block";
     document.getElementById("answer").value = "";
+    document.getElementById("answer").style.height = "auto";
   }
   if (types[currentQuestion] == "m") {
     document.getElementById("multichoice-screen").style.display = "block";
     document.getElementById("coding-screen").style.display = "none";
     document.getElementById("answer").value = "";
+    document.getElementById("answer").style.height = "auto";
     options = document.getElementById("options");
 
     while (options.firstChild) {
@@ -62,7 +64,10 @@ function displayQuestion() {
 
 // Sends answer from form to python
 function submitAnswer() {
-  if (attempts[currentQuestion] > 2 || marks[currentQuestion] != 0) return;
+  if (attempts[currentQuestion] > 2 || marks[currentQuestion] != 0) {
+    alert("Finished question");
+    return;
+  }
   var answer;
   if (types[currentQuestion] == "c") {
     answer = document.getElementById("answer").value;
@@ -73,7 +78,6 @@ function submitAnswer() {
     return;
   }
 
-  console.log("Answer: " + answer);
 
   // make an HTTP POST request to the Python server with the form data
   var xhr = new XMLHttpRequest();
@@ -84,9 +88,7 @@ function submitAnswer() {
       if (xhr.status === 200) {
         try {
           var response = JSON.parse(xhr.responseText);
-          console.log(response); // Output the parsed response
         } catch (error) {
-          console.log(xhr);
           console.error("Error parsing JSON:", error);
         }
         if (response.correct) {
@@ -105,12 +107,12 @@ function submitAnswer() {
 
         // Handle the response from the server here
         displayQuestion();
-        console.log(xhr.responseText);
       } else if (xhr.status == 503) {
-        console.log("Cannot connect to qb");
+        console.error("Cannot connect to QB");
         window.location.href = "/";
       } else {
         // Handle errors here
+        alert("Cannot connect to TM");
         console.error(xhr.statusText);
       }
     }
@@ -219,7 +221,6 @@ xhr.setRequestHeader("Content-Type", "application/json");
 xhr.onreadystatechange = function () {
   if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
     var response = JSON.parse(xhr.responseText);
-    console.log(response);
     if (response.success) {
       // authentication succeeded, display the question screen
       username = response.username;
@@ -230,14 +231,6 @@ xhr.onreadystatechange = function () {
       current_marks = response.current_marks;
       attempts = response.attempts;
       marks = response.marks;
-
-      console.log(questions);
-      console.log(types);
-      console.log(choices);
-      console.log(current_finished);
-      console.log(current_marks);
-      console.log(attempts);
-      console.log(marks);
       displayQuestion();
     } else {
       // authentication failed, display an error message

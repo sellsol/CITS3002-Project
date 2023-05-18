@@ -24,13 +24,12 @@ def StartServer(stop):
     
     # continuously check for events with the sockets
     while True:
-        events = sel.select(timeout=None) #will we need to deal with timeout later on
+        events = sel.select(timeout = 0.1) #will we need to deal with timeout later on
         for key, mask in events:
             if key.data is None:
                 AcceptConnection(s)
             else:
                 ServiceConnection(key, mask)
-        
         if stop():
             break
     
