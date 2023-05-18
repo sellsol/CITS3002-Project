@@ -59,15 +59,14 @@ def get_answers(username):
 
 
 # checks the given answers to a question and updates progress
-def check_answer(username, question_index, student_answer, attempts):
+def check_answer(username, question_index, student_answer, is_last_attempt):
     # calls the relevant QB and asks to check
-    is_last_attempt = attempts == 2
     portnum, q_index = q_to_qb(question_index)
     seed = int(hashlib.sha256(username.encode('utf-8')).hexdigest(), 16) % 10**8
 
     #TBC update answers
 
-    return CheckAnswerRequest(portnum, q_index, seed, attempts, student_answer)
+    return CheckAnswerRequest(portnum, q_index, seed, is_last_attempt, student_answer)
 
 
 # creates new student entry in the TM_database

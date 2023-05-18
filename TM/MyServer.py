@@ -30,6 +30,31 @@ class MyServer(BaseHTTPRequestHandler):
                 with open("questions.html", "r") as f:
                     html = f.read()
                     self.wfile.write(bytes(html, "utf-8"))
+        elif self.path == "/styles.css":
+            self.send_response(200)
+            self.send_header("Content-type", "text/css")
+            self.end_headers()
+
+            with open("styles.css", "r") as f:
+                css = f.read()
+                self.wfile.write(bytes(css, "utf-8"))
+
+        elif self.path == "/login_script.js":
+            self.send_response(200)
+            self.send_header("Content-type", "text/javascript")
+            self.end_headers()
+
+            with open("login_script.js", "r") as f:
+                js = f.read()
+                self.wfile.write(bytes(js, "utf-8"))
+        elif self.path == "/questions_script.js":
+            self.send_response(200)
+            self.send_header("Content-type", "text/javascript")
+            self.end_headers()
+
+            with open("questions_script.js", "r") as f:
+                js = f.read()
+                self.wfile.write(bytes(js, "utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -64,9 +89,11 @@ class MyServer(BaseHTTPRequestHandler):
         elif self.path == "/get-data":
             cookie = SimpleCookie(self.headers.get("Cookie"))
             username = cookie.get("username")
+            
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
+            
             questions, types, choices = get_questions(username.value)
             current_finished, current_marks, attempts, marks = get_answers(username.value)
             response = {"success": True, "username": username.value, "questions": questions, "types": types, 
@@ -80,15 +107,16 @@ class MyServer(BaseHTTPRequestHandler):
             data = body.decode("utf-8")
             username, answer, pos, attempts = data.split(":")
             answer = unquote(answer)
+            is_last_attempt = int(attempts) == 2
             
-            # TODO: Do something with this data
-
             print("\tSubmitting answer from: " + username, ", Question index: " + pos)
             print("\tAnswer: " + answer)
             self.send_response(200)
-            self.end_headers()
+            self.end_headers()                
             
-            response = {"success": True, "correct": check_answer(username, int(pos), answer, int(attempts))} 
+            correct, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
+            print("\tis_correct = " + str(correct) + ", sample output = " + str(sample_output) + ", student output = " + str(student_output))
+            response = {"success": True, "correct": correct, "answer": sample_output}
             self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
