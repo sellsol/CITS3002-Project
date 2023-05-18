@@ -114,7 +114,7 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()                
             
-            correct, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
+            correct, is_image_output, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
             print("\tis_correct = " + str(correct) + ", sample output = " + str(sample_output) + ", student output = " + str(student_output))
             response = {"success": True, "correct": correct, "student_output": student_output, "sample_output": sample_output}
             self.wfile.write(json.dumps(response).encode("utf-8"))

@@ -65,11 +65,11 @@ def check_answer(username, question_index, student_answer, is_last_attempt):
     seed = int(hashlib.sha256(username.encode('utf-8')).hexdigest(), 16) % 10**8
 
     # update answers
-    correct, sample_output, student_output =  CheckAnswerRequest(qb, seed_index, seed, is_last_attempt, student_answer)
-    update_answers(username, question_index, correct)
+    is_correct, is_image_output, sample_output, student_output =  CheckAnswerRequest(qb, seed_index, seed, is_last_attempt, student_answer)
+    update_answers(username, question_index, is_correct)
     print("\tStudent info updated")
 
-    return correct, sample_output, student_output
+    return is_correct, is_image_output, sample_output, student_output
 
 
 # creates new student entry in the TM_database
