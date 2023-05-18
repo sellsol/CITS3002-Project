@@ -106,6 +106,9 @@ function submitAnswer() {
         // Handle the response from the server here
         displayQuestion();
         console.log(xhr.responseText);
+      } else if (xhr.status == 503) {
+        console.log("Cannot connect to qb");
+        window.location.href = "/";
       } else {
         // Handle errors here
         console.error(xhr.statusText);
