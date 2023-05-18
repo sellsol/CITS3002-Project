@@ -122,9 +122,14 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
         memcpy((unsigned char *)outputStr.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
         memcpy((unsigned char *)outputStr.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
 
-        printf("\nSending long string:");
-        for (int i = 0; i < outputStr.len; i++) {
-            printf("%c", outputStr.data[i]);
+        printf("\nImage 1:");
+        for (int i = 0; i < outputs[0].len; i++) {
+            printf("%c", outputs[0].data[i]);
+        }
+        printf("\n");
+        printf("\nImage 2:");
+        for (int i = 0; i < outputs[1].len; i++) {
+            printf("%c", outputs[1].data[i]);
         }
         printf("\n");
         

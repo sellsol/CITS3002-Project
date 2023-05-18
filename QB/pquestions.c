@@ -366,7 +366,11 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				if (lastAttempt == 1) {
 					printf("RETURNING LAST ATTEMPT %i\n", ret);
 					struct FileData *r = malloc(2 * sizeof(struct FileData));
-					r[0] = out;
+					if (ret == 0) {
+						r[0] = out;
+					} else {
+						r[0] = png;
+					}
 					r[1] = output;
 					return r;
 				}
