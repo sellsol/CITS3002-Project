@@ -148,6 +148,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                 correct_flag = chr(rawReceived[0])
                 is_correct = correct_flag == 't'
                 is_image_output = correct_flag == 'i'
+                print(rawReceived)
 
                 # if 3rd incorrect attempt return outputs
                 if is_last_attempt and not is_correct:
@@ -161,6 +162,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                         sample_output = rawReceived[:header].decode('utf-8')
                         
                     rawReceived = rawReceived[header:]
+                    print(rawReceived)
                     
                     header = int.from_bytes(rawReceived[:4], byteorder = "little")
                     rawReceived = rawReceived[4:]
