@@ -61,12 +61,15 @@ def get_answers(username):
 # checks the given answers to a question and updates progress
 def check_answer(username, question_index, student_answer, is_last_attempt):
     # calls the relevant QB and asks to check
-    portnum, q_index = q_to_qb(question_index)
+    qb, seed_index = q_to_qb(question_index)
     seed = int(hashlib.sha256(username.encode('utf-8')).hexdigest(), 16) % 10**8
 
-    #TBC update answers
+    # update answers
+    correct, sample_output, student_output =  CheckAnswerRequest(qb, seed_index, seed, is_last_attempt, student_answer)
+    update_answers(username, question_index, correct)
+    print("\tStudent info updated")
 
-    return CheckAnswerRequest(portnum, q_index, seed, is_last_attempt, student_answer)
+    return correct, sample_output, student_output
 
 
 # creates new student entry in the TM_database
@@ -92,8 +95,9 @@ def update_answers(username, question_index, is_correct):
             line_answers = line.split(";")
             if line_answers[0] == username:
                 attempts = list(map(int, line_answers[1].split(",")))
+                marks = list(map(int, line_answers[2].split(",")))
+                
                 if is_correct:
-                    marks = list(map(int, line_answers[2].split(",")))
                     marks[question_index] += 3 - attempts[question_index]
                 attempts[question_index] += 1
 
@@ -104,9 +108,8 @@ def update_answers(username, question_index, is_correct):
     except FileNotFoundError as err:
         # error handling for if the file could not be found
         print("Error: TM database '" + DB_filepath + "' could not be found.")
-        raise err   
+        raise err    
     
-
 # gets the start and end indexes of questions that were taken from a qb
 def indexes_in_qb(i):
     low = i * num_questions // num_qbs
