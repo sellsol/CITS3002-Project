@@ -145,7 +145,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                 
                 # deserialise reply
                 rawReceived = data_received.get()[1]
-                correct_flag = rawReceived.decode('utf-8')[0]
+                correct_flag = chr(rawReceived[0])
                 is_correct = correct_flag == 't'
                 is_image_output = correct_flag == 'i'
 
