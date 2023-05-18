@@ -18,8 +18,10 @@ function displayQuestion() {
   document.getElementById("current-marks").innerHTML = current_marks;
   document.getElementById("attempts").innerHTML = attempts[currentQuestion];
   document.getElementById("marks").innerHTML = marks[currentQuestion];
-  document.getElementById("current-finished-out-of").innerHTML = questions.length;
-  document.getElementById("current-marks-out-of").innerHTML = 3*questions.length;
+  document.getElementById("current-finished-out-of").innerHTML =
+    questions.length;
+  document.getElementById("current-marks-out-of").innerHTML =
+    3 * questions.length;
   console.log(username);
   if (types[currentQuestion] == "c") {
     document.getElementById("multichoice-screen").style.display = "none";
@@ -77,12 +79,12 @@ function submitAnswer() {
         var response = JSON.parse(xhr.responseText);
         if (response.correct) {
           correct();
-        } else if (response.answer == "") {
-          incorrect("", "");
-        } else if (types[currentQuestion] == "c") {
-          incorrect(response.answer, answer);
-        } else if (types[currentQuestion] == "m") {
-          incorrect(response.answer, choices[currentQuestion][answer]);
+        } else {
+          const studentOutput =
+            response.student_output != null ? response.student_output : "";
+          const sampleOutput =
+            response.sample_output != null ? response.sample_output : "";
+          incorrect(studentOutput, sampleOutput);
         }
 
         // Handle the response from the server here
@@ -109,8 +111,8 @@ function submitAnswer() {
 // Change to previous question
 function previousQuestion() {
   if (currentQuestion > 0) {
-    document.getElementById("correct-answer").textContent = "";
-    document.getElementById("submitted-answer").textContent = "";
+    document.getElementById("sample-output").textContent = "";
+    document.getElementById("student-output").textContent = "";
     currentQuestion--;
     displayQuestion();
   }
@@ -119,8 +121,8 @@ function previousQuestion() {
 // Change to next question
 function nextQuestion() {
   if (currentQuestion < questions.length - 1) {
-    document.getElementById("correct-answer").textContent = "";
-    document.getElementById("submitted-answer").textContent = "";
+    document.getElementById("sample-output").textContent = "";
+    document.getElementById("student-output").textContent = "";
     currentQuestion++;
     displayQuestion();
   }
@@ -135,9 +137,11 @@ function correct() {
 }
 
 // Updates for incorrect answers
-function incorrect(correctAnswer, submittedAnswer) {
-  document.getElementById("correct-answer").textContent = correctAnswer;
-  document.getElementById("submitted-answer").textContent = submittedAnswer;
+function incorrect(studentOutput, sampleOutput) {
+  document.getElementById("student-output").innerHTML =
+    studentOutput != "" ? "Your Output: <br>" + studentOutput : "";
+  document.getElementById("sample-output").innerHTML =
+    sampleOutput != "" ? "Expected Output: <br>" + sampleOutput : "";
   attempts[currentQuestion]++;
   if (attempts[currentQuestion] == 3) current_finished++;
 }
@@ -159,7 +163,6 @@ document
     event.preventDefault();
     submitAnswer();
   });
-
 
 // Logs out by deleting cookie and asking to remake page
 function logout() {
@@ -208,7 +211,6 @@ xhr.onreadystatechange = function () {
   }
 };
 xhr.send(JSON.stringify({ key: "value" }));
-
 
 // Prevents default tab functionality
 document.getElementById("answer").addEventListener("keydown", function (event) {
