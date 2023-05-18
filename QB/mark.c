@@ -64,9 +64,10 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
             i += 1;
             outputs[1].data = strtok(NULL, "\\,");
         }
-
         outputs[1].len = strlen(outputs[1].data);
-
+        if (outputs[1].data[outputs[1].len - 1] == '\n') {
+            outputs[1].data[outputs[1].len - 1] = '\0';
+        }
 
         FILE *fp = fopen(ans_file,"r");
         //printf("Opened file %s\n", ans_file);
