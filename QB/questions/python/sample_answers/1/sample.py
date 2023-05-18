@@ -1,4 +1,4 @@
-import _png
+import vpng
 
 width = 255
 height = 255
@@ -6,8 +6,8 @@ img = []
 for y in range(height):
     row = ()
     for x in range(width):
-        row = row + (255, x, 49)
+        row = row + (0, 255, 0)
     img.append(row)
 with open('image.png', 'wb') as f:
-    w = _png.Writer(width, height)
+    w = vpng.Writer(width, height, greyscale=False)
     w.write(f, img)

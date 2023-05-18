@@ -20,11 +20,12 @@ class Writer:
         data = bytearray()
 
         for row in rows: #Write every row as a chunk
-            data.append(0)
-            data.extend(row)
-            compressed = compressor.compress(data)
-            write_chunk(outfile, b'IDAT', compressed)
-            data = bytearray()
+                data.append(0)
+                data.extend(row)
+                if len(data) > 2 ** 20:
+                    compressed = compressor.compress(data)
+                    write_chunk(outfile, b'IDAT', compressed)
+                    data = bytearray()
 
         #Write any leftover data
         compressed = compressor.compress(bytes(data))
@@ -45,3 +46,14 @@ def write_chunk(outfile, tag, data=b''):
     checksum &= 2 ** 32 - 1
     outfile.write(struct.pack("!I", checksum))
 
+width = 255
+height = 255
+img = []
+for y in range(height):
+    row = ()
+    for x in range(width):
+        row = row + (255, 255, 0)
+    img.append(row)
+with open('image.png', 'wb') as f:
+    w = Writer(width, height)
+    w.write(f, img)

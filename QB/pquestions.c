@@ -138,6 +138,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 				if (expectedImage.len != outputImage.len) {
 					*completed = 0;
 					if (lastAttempt == 1) {
+						*completed = 2;
 						return outputImage;
 					}
 				}
@@ -363,7 +364,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				unlink(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
-					printf("RETURNING LAST ATTEMPT\n");
+					printf("RETURNING LAST ATTEMPT %i\n", ret);
 					struct FileData *r = malloc(2 * sizeof(struct FileData));
 					r[0] = out;
 					r[1] = output;
