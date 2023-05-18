@@ -145,60 +145,33 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                 
                 # deserialise reply
                 rawReceived = data_received.get()[1]
-                success_type = rawReceived.decode('utf-8')[0]
-                is_correct = success_type == "t" # Sends the character
-                
+                correct_flag = rawReceived.decode('utf-8')[0]
+                is_correct = correct_flag == 't'
+                is_image_output = correct_flag == 'i'
 
+                # if 3rd incorrect attempt return outputs
                 if is_last_attempt and not is_correct:
                     rawReceived = rawReceived[1:]
 
                     header = int.from_bytes(rawReceived[:4], byteorder = "little")
-                    #print("header 1 = " + str(header)) #debug
                     rawReceived = rawReceived[4:]
-                    sample_output = rawReceived[:header].decode('utf-8')
+                    if is_image_output:
+                        sample_output = rawReceived[:header]
+                    else:
+                        sample_output = rawReceived[:header].decode('utf-8')
+                        
                     rawReceived = rawReceived[header:]
                     
                     header = int.from_bytes(rawReceived[:4], byteorder = "little")
-                    #print("header 2 = " + str(header)) #debug
                     rawReceived = rawReceived[4:]
-                    student_output = rawReceived[:header].decode('utf-8')
+                    if is_image_output:
+                        sample_output = rawReceived[:header]
+                    else:
+                        student_output = rawReceived[:header].decode('utf-8')
                     
-                    #print("\tis_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
-                    return success_type, sample_output, student_output
-                
-                    # IMAGE TESTING
-                    return "i", read_file("example.png"), read_file("example.gif")
+                    return is_correct, is_image_output, sample_output, student_output
                 else:
-                    #print("\tis_correct = " + str(is_correct))
-                    return success_type, "", ""
-            
-                """
-                if not is_correct and is_last_attempt:
-                    rawReceived = rawReceived[1:]
-
-                    header = int.from_bytes(rawReceived[:4], byteorder = "little")
-                    print("header 1 = " + str(header)) #debug
-                    rawReceived = rawReceived[4:]
-                    sample_output = rawReceived[:header].decode('utf-8')
-                    rawReceived = rawReceived[header:]
-                    
-                    header = int.from_bytes(rawReceived[:4], byteorder = "little")
-                    print("header 2 = " + str(header)) #debug
-                    rawReceived = rawReceived[4:]
-                    student_output = rawReceived[:header].decode('utf-8')
-                    
-                    print("\tis_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
-                    return is_correct#, sample_output, student_output
-                else:
-                    print("\tis_correct = " + str(is_correct))
-                    return is_correct
-                """
-            
-            
-def read_file(file_path):
-    with open(file_path, "rb") as image_file:
-        byte_data = image_file.read()
-        return byte_data
+                    return is_correct, False, "", ""
 
 def test_ready():
     qbs_ready = 0

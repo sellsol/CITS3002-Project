@@ -82,14 +82,15 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 
 	if (pipe(thepipe) != 0) {
 		perror("pipe");
-		exit(EXIT_FAILURE);
+		*completed = 3;
+		return (struct FileData){0, NULL};
 	}
 
 	//Fork
 	switch (fork()) {
 		case -1:
 			perror("fork");
-			*completed = 2;
+			*completed = 3;
 			return (struct FileData){0, NULL};
 		case 0: //Child process - execl
 			close(thepipe[0]);
@@ -177,7 +178,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 	}
 }
 
-//Returns 0 if any of the tests fail, 1 otherwise, or 2 if you fail. See testCode for my comments on this
+//Returns 0 if any of the tests fail, 1 otherwise, 2 if it's a failure and image, 3 if we fail. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
 struct FileData* compileCode(char* completed, char* question, char* code, char lastAttempt) {
 	//Create temporary directory for running question
@@ -186,7 +187,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 
 	//Error handle mkdtemp
 	if (dirPath == NULL) {
-		*completed = 2;
+		*completed = 3;
 		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 	}
     //Create path for the compiled code
@@ -206,6 +207,15 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
     close(pFd);
 
     if (PROGRAM_MODE == C) {
+		//int thepipe[2];
+
+		/*
+		if (pipe(thepipe) != 0) {
+			perror("pipe");
+			*completed = 3;
+			return NULL;
+		}*/
+		
 	    //Get the executable path
 	    char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
 
@@ -286,7 +296,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				int i = 1;
 				if (PROGRAM_MODE == PYTHON) {
 					inArgs[0] = "/usr/bin/python3";
-					inArgs[1] = "./code";
+					inArgs[1] = "./code.py";
 					i = 2;
 				} else {
 					inArgs[0] = "code";
@@ -339,7 +349,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			//free(in);
 
 			if (ret == 0) {
-				*completed = 0;
+				*completed = (png.data == NULL) ? 0 : 2;
 				closedir(d);
 				unlink(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);

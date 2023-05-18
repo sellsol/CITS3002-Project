@@ -114,14 +114,12 @@ class MyServer(BaseHTTPRequestHandler):
             print("\tAnswer: " + answer)
             self.send_response(200)
             self.end_headers()                
-            
-            type, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
-            if (type == "i"):
+            correct, is_image_output, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
+            if (is_image_output):
                 response = {"success": True, "image": True, "correct": False, 
                             "student_output": base64.b64encode(student_output).decode("utf-8"), 
                             "sample_output": base64.b64encode(sample_output).decode("utf-8")}
             else:
-                correct = type == "t"
                 response = {"success": True, "image": False, "correct": correct, 
                             "student_output": student_output, 
                             "sample_output": sample_output}

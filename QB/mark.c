@@ -108,10 +108,20 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     //char *str_sep = "\\;";
 
     //Format??: char 't/f', expected output, string seperator, output
-    char correct = (is_correct) ? 't' : 'f';
+    char correct;
+    if (is_correct == 0) {
+        correct = 'f';
+    } else if (is_correct == 1) {
+        correct = 't';
+    } else if (is_correct == 2) {
+        correct = 'i';
+    } else {
+        correct = 'c';
+    }
+
     struct FileData outputStr;
 
-    if (lastAttempt == 1 && is_correct == 0) {
+    if (lastAttempt == 1 && (is_correct == 0 || is_correct == 2)) {
         outputStr.len = sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1;
         outputStr.data = calloc(outputStr.len, sizeof(char));
 
