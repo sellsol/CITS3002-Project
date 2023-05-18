@@ -177,7 +177,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 	}
 }
 
-//Returns 0 if any of the tests fail, 1 otherwise, or 2 if you fail. See testCode for my comments on this
+//Returns 0 if any of the tests fail, 1 otherwise, 2 if it's a failure and image, 3 if we fail. See testCode for my comments on this
 //lastAttempt is 1 if it's the last attempt (and therefore needs to return output error)
 struct FileData* compileCode(char* completed, char* question, char* code, char lastAttempt) {
 	//Create temporary directory for running question
@@ -186,7 +186,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 
 	//Error handle mkdtemp
 	if (dirPath == NULL) {
-		*completed = 2;
+		*completed = 3;
 		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 	}
     //Create path for the compiled code
@@ -339,7 +339,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			//free(in);
 
 			if (ret == 0) {
-				*completed = 0;
+				*completed = (png.data == NULL) ? 0 : 2;
 				closedir(d);
 				unlink(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
