@@ -128,6 +128,10 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 
 			//If this is an image, we check it like so
 			if (expectedImage.data != NULL) {
+				if (access("./image.png", F_OK) != 0) {
+					return (struct FileData){0, NULL};
+				}
+
 				struct FileData outputImage = readFile("./image.png");
 
 				//If not the same length, return
@@ -349,7 +353,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			//free(in);
 
 			if (ret == 0) {
-				*completed = (png.data == NULL) ? 0 : 2;
+				*completed = (png.data != NULL && lastAttempt == 1) ? 2 : 0;
 				closedir(d);
 				unlink(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
