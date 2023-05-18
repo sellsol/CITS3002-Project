@@ -8,6 +8,7 @@ var current_finished = 0;
 var current_marks = 0;
 var attempts = [];
 var marks = [];
+var displayImage = false;
 
 // Adds things to screen
 function displayQuestion() {
@@ -22,7 +23,12 @@ function displayQuestion() {
     questions.length;
   document.getElementById("current-marks-out-of").innerHTML =
     3 * questions.length;
-  console.log(username);
+  document.getElementById("student-output-image").style.display = displayImage
+    ? "block"
+    : "none";
+  document.getElementById("sample-output-image").style.display = displayImage
+    ? "block"
+    : "none";
   if (types[currentQuestion] == "c") {
     document.getElementById("multichoice-screen").style.display = "none";
     document.getElementById("coding-screen").style.display = "block";
@@ -76,15 +82,25 @@ function submitAnswer() {
   xhr.onreadystatechange = function () {
     if (xhr.readyState === XMLHttpRequest.DONE) {
       if (xhr.status === 200) {
-        var response = JSON.parse(xhr.responseText);
+        try {
+          var response = JSON.parse(xhr.responseText);
+          console.log(response); // Output the parsed response
+        } catch (error) {
+          console.log(xhr);
+          console.error("Error parsing JSON:", error);
+        }
         if (response.correct) {
           correct();
         } else {
           const studentOutput =
             response.student_output != null ? response.student_output : "";
           const sampleOutput =
-            response.sample_output != null ? response.sample_output : "";
-          incorrect(studentOutput, sampleOutput);
+           response.sample_output != null ? response.sample_output : "";
+          if (response.image) {
+            incorrectImage(studentOutput, sampleOutput);
+          } else {
+            incorrect(studentOutput, sampleOutput);
+          }
         }
 
         // Handle the response from the server here
@@ -113,6 +129,7 @@ function previousQuestion() {
   if (currentQuestion > 0) {
     document.getElementById("sample-output").textContent = "";
     document.getElementById("student-output").textContent = "";
+    displayImage = false;
     currentQuestion--;
     displayQuestion();
   }
@@ -123,6 +140,7 @@ function nextQuestion() {
   if (currentQuestion < questions.length - 1) {
     document.getElementById("sample-output").textContent = "";
     document.getElementById("student-output").textContent = "";
+    displayImage = false;
     currentQuestion++;
     displayQuestion();
   }
@@ -142,6 +160,20 @@ function incorrect(studentOutput, sampleOutput) {
     studentOutput != "" ? "Your Output: <br>" + studentOutput : "";
   document.getElementById("sample-output").innerHTML =
     sampleOutput != "" ? "Expected Output: <br>" + sampleOutput : "";
+  attempts[currentQuestion]++;
+  if (attempts[currentQuestion] == 3) current_finished++;
+}
+
+function incorrectImage(studentOutput, sampleOutput) {
+  document.getElementById("student-output").innerHTML =
+    studentOutput != "" ? "Your Output: <br>" : "";
+  document.getElementById("sample-output").innerHTML =
+    sampleOutput != "" ? "Expected Output: <br>" : "";
+  document.getElementById("student-output-image").src =
+    "data:image/png;base64," + studentOutput;
+  document.getElementById("sample-output-image").src =
+    "data:image/png;base64," + sampleOutput;
+  displayImage = true;
   attempts[currentQuestion]++;
   if (attempts[currentQuestion] == 3) current_finished++;
 }

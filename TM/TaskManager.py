@@ -4,6 +4,7 @@ import selectors
 import types
 from queue import Queue
 from config import *
+import base64
 
 sel = selectors.DefaultSelector()
 data_to_send = Queue()
@@ -144,7 +145,6 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                 
                 # deserialise reply
                 rawReceived = data_received.get()[1]
-                
                 correct_flag = rawReceived.decode('utf-8')[0]
                 is_correct = correct_flag == 't'
                 is_image_output = correct_flag == 'i'
@@ -159,6 +159,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                         sample_output = rawReceived[:header]
                     else:
                         sample_output = rawReceived[:header].decode('utf-8')
+                        
                     rawReceived = rawReceived[header:]
                     
                     header = int.from_bytes(rawReceived[:4], byteorder = "little")
@@ -170,8 +171,8 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                     
                     return is_correct, is_image_output, sample_output, student_output
                 else:
-                    return is_correct, None, None, None
-            
+                    return is_correct, False, "", ""
+
 def test_ready():
     qbs_ready = 0
     for qb in list(qbs.queue):

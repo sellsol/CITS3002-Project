@@ -5,6 +5,7 @@ import json
 from config import *
 from authentication import *
 from datastructs import *
+import base64
 
 class MyServer(BaseHTTPRequestHandler):            
     # Builds the html page
@@ -113,10 +114,15 @@ class MyServer(BaseHTTPRequestHandler):
             print("\tAnswer: " + answer)
             self.send_response(200)
             self.end_headers()                
-            
             correct, is_image_output, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
-            print("\tis_correct = " + str(correct) + ", sample output = " + str(sample_output) + ", student output = " + str(student_output))
-            response = {"success": True, "correct": correct, "student_output": student_output, "sample_output": sample_output}
+            if (is_image_output):
+                response = {"success": True, "image": True, "correct": False, 
+                            "student_output": base64.b64encode(student_output).decode("utf-8"), 
+                            "sample_output": base64.b64encode(sample_output).decode("utf-8")}
+            else:
+                response = {"success": True, "image": False, "correct": correct, 
+                            "student_output": student_output, 
+                            "sample_output": sample_output}
             self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)

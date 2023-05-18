@@ -172,4 +172,9 @@ body {
   #correct-answer {
     color: green;
   }
+
+  img {
+    width: 400px;
+    justify-content: center;
+  }
   
