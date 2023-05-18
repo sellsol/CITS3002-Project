@@ -378,13 +378,15 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			free(inArgs);
 			printf("DONE TEST\n");
 
-			//
+			//Handle if the return is a failure
 			if (ret > 0) {
 				*completed = ret;
 				closedir(d);
 				unlink(codePath);
 				free(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+
+				//Return last attempt
 				if (lastAttempt == 1 && ret != 3) {
 					printf("RETURNING LAST ATTEMPT %i\n", ret);
 					struct FileData *r = malloc(2 * sizeof(struct FileData));
@@ -410,6 +412,6 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 		closedir(d);
 		unlink(codePath);
 		free(codePath);
-		nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+		nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS); //Clean up file
 		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 }

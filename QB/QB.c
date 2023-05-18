@@ -68,9 +68,12 @@ char* recvAll(int s) {
 
 int main(int argc, char **argv) {
 
+	char *ip = "127.0.0.1";
+	char *port = "65432";
+
 	//Use argv to determine QB mode
 	int c;
-	while ((c = getopt(argc, argv, "cp")) != -1) {
+	while ((c = getopt(argc, argv, "cpi:o:")) != -1) {
 		switch (c) {
 			case 'c':
 				if (PROGRAM_MODE == NONE) {
@@ -78,7 +81,7 @@ int main(int argc, char **argv) {
 					q_path = c_path;
 					break;
 				} else {
-					printf("Usage: QB -[c|p]\n");
+					printf("Usage: QB -[c|p] -i [ip addr] -p [port]\n");
 					exit(EXIT_FAILURE);
 				}
 			case 'p':
@@ -87,11 +90,19 @@ int main(int argc, char **argv) {
 					q_path = py_path;
 					break;
 				} else {
-					printf("Usage: QB -[c|p]\n");
+					printf("Usage: QB -[c|p] -i [ip addr] -p [port]\n");
 					exit(EXIT_FAILURE);
 				}
+			case 'i':
+				ip = optarg;
+				break;
+			case 'o':
+				port = optarg;
+				break;
 			case '?':
-				printf("Usage: QB -[c|p]\n");
+				if (optopt == 'i' || optopt == 'p') {
+					printf("Usage: QB -[c|p] -i [ip addr] -p [port]\n");
+				}
 				exit(EXIT_FAILURE);
 			default:
 				abort();
@@ -99,7 +110,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (PROGRAM_MODE == NONE) {
-		printf("Usage: QB -[c|p]\n");
+		printf("Usage: QB -[c|p] -i [ip addr] -p [port]\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -113,7 +124,7 @@ int main(int argc, char **argv) {
 	hints.ai_socktype = SOCK_STREAM;
 
 	//Initialise socket data
-	if ((status = getaddrinfo("127.0.0.1", "65432", &hints, &res)) != 0) {
+	if ((status = getaddrinfo(ip, port, &hints, &res)) != 0) {
 		fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
 		exit(EXIT_FAILURE);
 	}
