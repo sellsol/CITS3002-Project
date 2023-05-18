@@ -10,21 +10,23 @@ class Writer:
         self.height = height
 
     def write(self, outfile, rows):
-        outfile.write(signature)
+        outfile.write(signature) #Write signature
 
+        #Write preamble
         write_chunk(outfile, b'IHDR',
                     struct.pack("!2I5B", self.width, self.height, 8, 2, 0, 0, 0))
 
         compressor = zlib.compressobj()
         data = bytearray()
 
-        for row in rows:
+        for row in rows: #Write every row as a chunk
             data.append(0)
             data.extend(row)
             compressed = compressor.compress(data)
             write_chunk(outfile, b'IDAT', compressed)
             data = bytearray()
 
+        #Write any leftover data
         compressed = compressor.compress(bytes(data))
         flushed = compressor.flush()
 
@@ -33,6 +35,7 @@ class Writer:
 
         write_chunk(outfile, b'IEND')
 
+#Write chunk of png code with tag
 def write_chunk(outfile, tag, data=b''):
     outfile.write(struct.pack("!I", len(data)))
     outfile.write(tag)
