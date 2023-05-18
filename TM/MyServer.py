@@ -17,17 +17,17 @@ class MyServer(BaseHTTPRequestHandler):
             username = cookie.get("username")
             
             if not test_ready():
-                print("not test ready")
+                print("Student connected while test not ready")
                 with open("qb_error.html", "r") as f:
                     html = f.read()
                     self.wfile.write(bytes(html, "utf-8")) 
             elif username is None:
-                print ("username is none")
+                print ("Student connected to login page")
                 with open("login.html", "r") as f:
                     html = f.read()
                     self.wfile.write(bytes(html, "utf-8")) 
             else:
-                print ("questions page")
+                print ("Student logged in")
                 with open("questions.html", "r") as f:
                     html = f.read()
                     self.wfile.write(bytes(html, "utf-8"))
@@ -63,14 +63,12 @@ class MyServer(BaseHTTPRequestHandler):
     # Accepts data from page
     def do_POST(self):
         if self.path == "/login":
-            print("entered /login")
             content_length = int(self.headers["Content-Length"])
             body = self.rfile.read(content_length)
             data = json.loads(body)
             username = data["username"]
             password = data["password"]
-            print("validating")
-            print({loginFile, username, password})
+
             if validate_student(loginFile ,username, password):
                 print("\tLogged in: " + username)
 
@@ -101,23 +99,6 @@ class MyServer(BaseHTTPRequestHandler):
                         "choices": choices, "current_finished": current_finished, 
                         "current_marks": current_marks, "attempts": attempts, "marks": marks}
             self.wfile.write(json.dumps(response).encode("utf-8"))
-        elif self.path == "/submit-answer":
-            content_length = int(self.headers["Content-Length"])
-            body = self.rfile.read(content_length)
-            data = body.decode("utf-8")
-            username, answer, pos, attempts = data.split(":")
-            answer = unquote(answer)
-            
-            # TODO: Do something with this data
-
-            print("\tUsername: " + username)
-            print("\tQuestion Index: " + pos)
-            print("\tAnswer: " + answer)
-            self.send_response(200)
-            self.end_headers()
-            correct, correct_answer = check_answer(username, int(pos), answer, int(attempts))
-            response = {"success": True, "correct": correct, "answer": correct_answer}
-            self.wfile.write(json.dumps(response).encode("utf-8"))
         elif self.path == "/get-data":
             cookie = SimpleCookie(self.headers.get("Cookie"))
             username = cookie.get("username")
@@ -130,23 +111,28 @@ class MyServer(BaseHTTPRequestHandler):
                         "choices": choices, "current_finished": current_finished, 
                         "current_marks": current_marks, "attempts": attempts, "marks": marks}
             self.wfile.write(json.dumps(response).encode("utf-8"))
+        elif self.path == "/submit-answer":
+            content_length = int(self.headers["Content-Length"])
+            body = self.rfile.read(content_length)
+            data = body.decode("utf-8")
+            username, answer, pos, attempts = data.split(":")
+            answer = unquote(answer)
+            
+            # TODO: Do something with this data
+
+            print("\tSubmitting answer: " + username, ", Question index: " + pos)
+            print("\tAnswer: " + answer)
+            self.send_response(200)
+            self.end_headers()
+            correct, correct_answer = check_answer(username, int(pos), answer, int(attempts))
+            response = {"success": True, "correct": correct, "answer": correct_answer}
+            self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
-
-# PLACEHOLDER FUNCTION
-def test_ready():
-    return True
-
-if __name__ == "__main__":
-    # Makes a server object
-    webServer = HTTPServer((hostName, serverPort), MyServer)
-    print("Server started http://%s:%s" % (hostName, serverPort))
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    webServer.server_close()
-    print("Server stopped.")
+            
+    def handle(self):
+        try:
+            BaseHTTPRequestHandler.handle(self)
+        except socket.error:
+            pass

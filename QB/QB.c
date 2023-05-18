@@ -46,7 +46,7 @@ char* recvAll(int s) {
 	if (ret == -1) {
 		return NULL;
 	}
-	char *msg = malloc(len); //Error handle here
+	char *msg = calloc(len, sizeof(char)); //Error handle here
 	//len = ntohl(len); Don't know what beej was thinking, this shit just breaks everything
 	
 	char *index = msg; //Create an index to trawl across allocated memory
@@ -140,18 +140,26 @@ int main(int argc, char **argv) {
 	while (len != -1) {
 		msg = recvAll(sockfd);
 
-		//Possibly make this a switch?
-		if (msg[0] == 'G') { //Generate questions request
+		if (strlen(msg) == 0) { // Connection closed
+			printf("Connection to server lost\n");
+			printf("Exiting program, rerun to reconnect\n");
+			close(sockfd);
+			free(msg);
+			freeaddrinfo(res);
+			return(0);
+		} else if (msg[0] == 'G') { //Generate questions request
+			//Disects request data
 			char numQuestions = msg[1];
 			uint64_t seed;
 			memcpy(&seed, msg + 2, sizeof(uint64_t));
+
+			printf("Generate questions request: seed %lu, number wanted %c\n", seed, numQuestions);
+
+			//Creates and sends reply
 			char *output = get_questions(seed, numQuestions);
 			sendAll(sockfd, output, strlen(output));
-
 			free(output);
-			
 		} else if (msg[0] == 'C') { //Check questions request
-
 			//Disects request data
 			char questionIndex = msg[1];
 			uint64_t seed;
@@ -159,48 +167,13 @@ int main(int argc, char **argv) {
 			char lastAttempt = msg[10];
 			char *answer = msg + 11;
 
-			printf("Request to check questions with data %d, %016llX, %d, %s\n", questionIndex, &seed, lastAttempt, answer);
+			printf("Check answer request: seed %lu, index of seed %d, is last attempt %c\n", seed, questionIndex, lastAttempt);
+			printf("\tanswer:\n %s", answer);
 
+			//Creates and sends reply
 			struct FileData response = question_correct(seed, questionIndex, lastAttempt, answer);
 			sendAll(sockfd, response.data, response.len);
 			free(response.data);
-			/* OLD CODE IN STORAGE
-			//Get the question id
-			int *ids = malloc(questionIndex * sizeof(int));
-			int val = question_ids(ids, 'c', questionIndex + 1, seed);
-
-			printf("Marking question %i...\n", ids[questionIndex]);
-
-			//Gets the question file name
-			char* line = a_question(C_Q, ids[questionIndex]);
-			char* questionFile = strtok(line, ",");
-			
-			//Cleans up some loose memory from disecting request data
-			free(ids);
-
-			//Compile and test code
-			char completed;
-			struct FileData* ret = compileCode(&completed, questionFile, answer, lastAttempt);
-
-			//Send response back
-			if (completed == 0) {
-				//Formulate incorrect response
-				//Template: 0 + expectedOutput + ';' + output
-
-				int responseLen = sizeof(char) + strlen(ret[0]) + 3 + strlen(ret[1]);
-				char *response = calloc(responseLen, sizeof(char));
-				snprintf(response, responseLen, "%c%s;%s", completed, ret[0], ret[1]);
-
-				//Send response
-				printf("WRONG: SENDING %s\n", response);
-				sendAll(sockfd, response, responseLen);
-				free(response);
-			} else {
-				printf("CORRECT\n"); //Actually, this will trigger even if we have some kind of failure on our side
-				sendAll(sockfd, &completed, sizeof(char));
-			}*/
-
-
 		} else {
 			printf("Unknown request: %s\n", msg);
 			//We should send some kind of clarification code on this one

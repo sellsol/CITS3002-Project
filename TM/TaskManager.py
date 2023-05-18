@@ -71,6 +71,13 @@ def ServiceConnection(key, mask):
     if mask & selectors.EVENT_READ:
         # something came in from socket
         recv_data = sock.recv(1024)
+        got = 1024
+        length_header = int.from_bytes(recv_data[:4], byteorder = "little")
+        recv_data = recv_data[4:]
+        while got < length_header:
+            recv_data += sock.recv(1024)
+            got += 1024
+        
         if recv_data:
             # data received from the socket
             data_received.put((data.addr, recv_data))
@@ -97,20 +104,6 @@ def ServiceConnection(key, mask):
             print(f"Sending data to {data.addr}")
             sock.sendall(data.outb)
            
-# FOR TESTING PURPOSES 
-# sends a text message to a qb, waits for a reply and returns it
-def SendMessage(qb_index, data):
-    addr = list(qbs.queue)[qb_index]
-    data_to_send.put((addr, struct.pack("i", len(data)) + bytes(data, "utf-8"))) #Just sends length of data then data    
-    
-    # wait for a reply to appear in the queue
-    while True:
-        for recv_data in list(data_received.queue):
-            if recv_data[0] == addr:
-                print(f"Received data from {addr}")
-                return data_received.get()[1].decode('utf-8')
-  
-
 # serialises and sends a question request to a qb,
 # waits for a reply and returns it deserialised
 def GenQuestionsRequest(qb_index, numQuestions, seed):
@@ -125,11 +118,8 @@ def GenQuestionsRequest(qb_index, numQuestions, seed):
                 print(f"Received data from {addr}")
                 # deserialise reply
                 rawReceived = data_received.get()[1] 
-                header = int.from_bytes(rawReceived[:4], byteorder = "big")
-                rawReceived = rawReceived[4:]
 
                 received = rawReceived.decode('utf-8').split("\;")
-                print(received)
                                 
                 questions = received[:numQuestions]
                 types = received[numQuestions : 2 * numQuestions]
@@ -153,12 +143,32 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, attempts, student_answer):
             if recv_data[0] == addr:
                 print(f"Received data from {addr}")    
                 
-                # deserialise reply TBC
-                print(data_received).get()[1].decode('utf-8')
-                return data_received.get()[1].decode('utf-8')
+                # deserialise reply
+                rawReceived = data_received.get()[1]
+                
+                is_correct = rawReceived.decode('utf-8')[0] == 't'
+
+                if not is_correct and is_last_attempt:
+                    rawReceived = rawReceived[1:]
+
+                    header = int.from_bytes(rawReceived[:4], byteorder = "little")
+                    print("header 1 = " + str(header)) #debug
+                    rawReceived = rawReceived[4:]
+                    sample_output = rawReceived[:header].decode('utf-8')
+                    rawReceived = rawReceived[header:]
+                    
+                    header = int.from_bytes(rawReceived[:4], byteorder = "little")
+                    print("header 2 = " + str(header)) #debug
+                    rawReceived = rawReceived[4:]
+                    student_output = rawReceived[:header].decode('utf-8')
+                    
+                    print("is_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
+                    return is_correct#, sample_output, student_output
+                else:
+                    print("is_correct = " + str(is_correct))
+                    return is_correct
             
 def test_ready():
-    print(num_qbs)
     qbs_ready = 0
     for qb in list(qbs.queue):
         if qb != None:
