@@ -78,19 +78,17 @@ char *a_question(char *filename,int line_index) {
 * sends questions string back
 */
 char* get_questions(uint64_t seed, char num){
-
     char **ques_type_ans; //pointer to question, types, and answer 
-    ques_type_ans = malloc((NUM_QAT_STRINGS + 1) * sizeof(char *));
+    ques_type_ans = malloc(NUM_QAT_STRINGS * sizeof(char *));
+    
     //ques_type_ans[0] refers to questions, [1] refers to types, [2] refers to answers
     ques_type_ans[0] = calloc(BUFSIZ, sizeof(char));
     ques_type_ans[1] = calloc(BUFSIZ, sizeof(char));
     ques_type_ans[2] = calloc(BUFSIZ, sizeof(char));
-    
 
     int *ids = question_ids(num,seed);
 
-
-    char*q_sep = "\\;"; //question seperator
+    char *q_sep = "\\;"; //question seperator
     char *sep = ","; //general csv seperator
 
     char *filename;
@@ -101,30 +99,31 @@ char* get_questions(uint64_t seed, char num){
     }
     
     int i = 0;
-    char*line;
-    char*ques;
-    char*ans;
-    while(i<num){
+    char *line;
+    char *ques;
+    char *ans;
+    while(i < num) { //Go through all the questions up to num
+        //Get the id of the next question and the line
         int line_index = ids[i];
-        line=a_question(filename,line_index);
+        char *line = a_question(filename,line_index);
         
-        //question type
-        line=strstr(line,sep);
+        //Get question type
+        line = strstr(line,sep);
         line = line + 1;
         char type = line[0];
 
-        //question and answer strings
-        line=strstr(line,sep);
+        //Get question and answer strings
+        line = strstr(line,sep);
         line = line+1;
 
-        //question string if not coding
-        if(type!='c'){
+        //Get question string if not coding
+        if(type != 'c'){
             ans = strstr(line,sep);
             int q_position = ans - line;
             ques = strndup(line,q_position);
             ans = ans+1;//removing ","
-        }else{
-            ans="";
+        } else {
+            ans = "";
             ques = line;
         }
         
@@ -133,7 +132,7 @@ char* get_questions(uint64_t seed, char num){
         else strncat(ques_type_ans[0],ques,strlen(ques));
         strncat(ques_type_ans[0],q_sep,strlen(q_sep));
 
-        if (type!= 'c') strncat(ques_type_ans[2],ans,strlen(ans)-1); //removing trailing \n for mcq answers
+        if (type != 'c') strncat(ques_type_ans[2],ans,strlen(ans)-1); //removing trailing \n for mcq answers
         strncat(ques_type_ans[2],q_sep,strlen(q_sep));
 
         strncat(ques_type_ans[1], &type,1);
@@ -143,7 +142,7 @@ char* get_questions(uint64_t seed, char num){
     }
 
     /*
-    * Serialising
+    * Serialising - Concatenating questions, types, and answers together
     */
     char *sending_txt = calloc(strlen(ques_type_ans[0])+strlen(ques_type_ans[1])+strlen(ques_type_ans[2]), sizeof(char));
     memcpy(sending_txt,ques_type_ans[0],strlen(ques_type_ans[0]));
@@ -151,12 +150,12 @@ char* get_questions(uint64_t seed, char num){
     memcpy(sending_txt+strlen(ques_type_ans[0])+strlen(ques_type_ans[1]),ques_type_ans[2],strlen(ques_type_ans[2]));
     strcat(sending_txt, "\0");
 
+    //Free memory
     free(ques_type_ans[0]);
     free(ques_type_ans[1]);
     free(ques_type_ans[2]);
-    //free(ques_type_ans); //TODO: intesting
-    //free(ids); //TODO: intesting
-    //free(line); //TODO: intesting (right place?) - not working, invalid free
+    free(ques_type_ans);
+    free(ids);
 
     return sending_txt;
 }

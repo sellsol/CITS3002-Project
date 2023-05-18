@@ -90,13 +90,13 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 		return (struct FileData){0, NULL};
 	}
 
-	//Fork
+	//Fork to execute program
 	switch (fork()) {
 		case -1:
 			perror("fork");
 			*completed = 3;
 			return (struct FileData){0, NULL};
-		case 0: //Child process - execl
+		case 0: //Child process - execv
 			close(thepipe[0]);
 			dup2(thepipe[1], 1);
 			dup2(thepipe[1], 2);
@@ -141,7 +141,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 						*completed = 2;
 						return outputImage;
 					}
-					*completed = 0;
+					*completed = 1;
 					return (struct FileData){0, NULL};
 				}
 
@@ -152,11 +152,11 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 							*completed = 2;
 							return outputImage;
 						}
-						*completed = 0;
+						*completed = 1;
 						return (struct FileData){0, NULL};
 					}
 				}
-				*completed = 1;
+				*completed = 0;
 
 				free(outputImage.data);
 				return (struct FileData){0, NULL};
@@ -164,9 +164,8 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 			
 			//We got more input than we were expecting, return failure
 			if (pos > MAX_OUTPUT_LEN) {
-				*completed = 0;
+				*completed = 1;
 				if (lastAttempt == 1) { //Return output if this is the last attempt
-					// concat ... and then we stopped reading to the end of this
 					return output;
 				}
 
@@ -175,7 +174,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 			}
 
 			//Mark whether the test was successfuly completed or not
-			*completed = (strcmp(output.data, expectedOut) == 0) ? 1 : 0; 
+			*completed = (strcmp(output.data, expectedOut) == 0) ? 0 : 1; 
 			
 			//Return result if this is the last attempt
 			if (lastAttempt == 1) {
@@ -265,7 +264,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				//Process data
 				if (pos != 0) {
 					printf("FAILED TO COMPILE\n");
-					*completed = 0;
+					*completed = 1;
 					if (lastAttempt == 1) {
 						return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){pos, output.data}};
 					}
@@ -290,12 +289,13 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 	//Go through every entry in the directory stream
 	for (struct dirent *dir = readdir(d); dir != NULL; dir = readdir(d)) {
 			if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) continue;
-			//printf("%s\n", dir->d_name);
 
+			//Get paths for test part 1
 			char *inPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/in"), sizeof(char));
 			char *outPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/out"), sizeof(char));
 			char *pngPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/png"), sizeof(char));
 
+			//Get paths for test part 2
 			sprintf(inPath, "%s%s%s", questionPath, dir->d_name, "/in");
 			sprintf(outPath, "%s%s%s", questionPath, dir->d_name, "/out");
 			sprintf(pngPath, "%s%s%s", questionPath, dir->d_name, "/png");
@@ -315,12 +315,12 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 					}
 				}
 
+				//Change arguments based on program mode
 				if (PROGRAM_MODE == PYTHON) {
 					count += 2;
 				} else {
 					count += 1;
 				}
-				
 
 				//Create array with count + 1
 				inArgs = malloc((count + 1) * sizeof(char *));
@@ -346,12 +346,14 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				free(in.data);
 
 			} else if (PROGRAM_MODE == PYTHON) {
+				//Set Python program default inputs if there's no in file
 				inArgs = malloc(2 * sizeof(char *));
 				inArgs[0] = "/usr/bin/python3";
 				inArgs[1] = "code.py";
 				inArgs[2] = NULL;
 			}
 
+			//Read png and output files
 			struct FileData png = readFile(pngPath);	
 			struct FileData out = readFile(outPath);
 				
@@ -360,6 +362,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			free(outPath);
 			free(pngPath);
 
+			//Change working directory to code folder to run the code
 			char ret;
 			char cwd[1024];
 			chdir(dirPath);
@@ -367,23 +370,25 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
     		printf("Current working dir: %s\n", cwd);
 			struct FileData output = testCode(&ret, lastAttempt, inArgs, out.data, png);
 
+			//Change back, clear any loose files
 			chdir("../..");
 			nftw(dirPath, testUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 
 			//Free provided data
-			//free(in);
+			free(inArgs);
 			printf("DONE TEST\n");
 
-			if (ret == 0 || ret == 2) {
+			//
+			if (ret > 0) {
 				*completed = ret;
 				closedir(d);
 				unlink(codePath);
 				free(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
-				if (lastAttempt == 1) {
+				if (lastAttempt == 1 && ret != 3) {
 					printf("RETURNING LAST ATTEMPT %i\n", ret);
 					struct FileData *r = malloc(2 * sizeof(struct FileData));
-					if (ret == 0) {
+					if (ret == 1) {
 						r[0] = out;
 					} else {
 						r[0] = png;
@@ -400,7 +405,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			free(png.data);
 		}
 
-		*completed = 1; //Set completed to true
+		*completed = 0; //Set completed to true
 
 		closedir(d);
 		unlink(codePath);

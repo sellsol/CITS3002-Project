@@ -20,8 +20,6 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     int *ids = question_ids(index+1,seed);
     char *sep = ","; //general and ans seperator
 
-    //printf("%d\n",ids[index]);
-
     //Should set these as globals
     char *filename;
     char *ans_file;
@@ -38,16 +36,13 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     printf("\tquestion info: %s", line);
 
     //Get question type (i.e number of options)
-    //line=strstr(line,sep);
-    //line = line + 1;
-    //char type = line[0];
+
     char *num = strtok(line, sep);
     char *type = strtok(NULL, sep);
     
-    char is_correct = 0;
+    char is_correct = 1;
 
     char ans_line[BUFSIZ];
-    //char**output = malloc(2 * sizeof(char *)); //output[0] = expected output, output[1]=answer output
     struct FileData *outputs;
 
     if(strcmp(type, "c") == 0){ // coding questions
@@ -70,7 +65,6 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
         }
 
         FILE *fp = fopen(ans_file,"r");
-        //printf("Opened file %s\n", ans_file);
         while(fgets(ans_line,sizeof(ans_line),fp) != NULL){
             int q_ind;
 
@@ -80,9 +74,8 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
             if(q_ind==ids[index]){
                 outputs[0].data = strtok(NULL, "\n");
                 outputs[0].len = strlen(outputs[0].data);
-                //printf("%s - %s\n", outputs[0].data, outputs[1].data);
                 if(strcmp(outputs[0].data, outputs[1].data) == 0) {
-                    is_correct = 1;
+                    is_correct = 0;
                 }
                 break;
             }
@@ -97,9 +90,9 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     //Format??: char 't/f', expected output, string seperator, output
     char correct;
     if (is_correct == 0) {
-        correct = 'f';
-    } else if (is_correct == 1) {
         correct = 't';
+    } else if (is_correct == 1) {
+        correct = 'f';
     } else if (is_correct == 2) {
         correct = 'i';
     } else {
@@ -108,7 +101,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
 
     struct FileData outputStr;
 
-    if (lastAttempt == 1 && (is_correct == 0 || is_correct == 2)) {
+    if (lastAttempt == 1 && (is_correct == 1 || is_correct == 2)) {
         printf("FORMULATING MESSAGE\n");
         outputStr.len = sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1;
         outputStr.data = calloc(outputStr.len, sizeof(char));
@@ -131,7 +124,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     }
 
     free(ids);
-    //free(line); //TODO: right place?
+    free(line);
 
     return outputStr;
 }
