@@ -145,10 +145,12 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 				//Compare images. Cannot use strcmp due to null characters present
 				for (int i = 0; i < outputImage.len; i++) {
 					if (outputImage.data[i] != expectedImage.data[i]) {
-						*completed = 0;
 						if (lastAttempt == 1) {
+							*completed = 2;
 							return outputImage;
 						}
+						*completed = 0;
+						return (struct FileData){0, NULL};
 					}
 				}
 				*completed = 1;
@@ -226,7 +228,9 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 		//Fork and compile using gcc
         switch(fork()) {
             case -1:
-                exit(EXIT_FAILURE);
+                perror("fork");
+				*completed = 3;
+				return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
             case 0: //Child process - execv
 			    execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
 			    perror("/usr/bin/gcc");
@@ -351,13 +355,15 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 
 			//Free provided data
 			//free(in);
+			printf("DONE TEST\n");
 
-			if (ret == 0) {
-				*completed = (png.data != NULL && lastAttempt == 1) ? 2 : 0;
+			if (ret == 0 || ret == 2) {
+				*completed = ret;
 				closedir(d);
 				unlink(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
+					printf("RETURNING LAST ATTEMPT\n");
 					struct FileData *r = malloc(2 * sizeof(struct FileData));
 					r[0] = out;
 					r[1] = output;

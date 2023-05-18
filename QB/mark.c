@@ -55,20 +55,6 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
 
         outputs = compileCode(&is_correct, num,answer,lastAttempt);
 
-        /*struct FileData codeOutput = {sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1, NULL};
-        
-        //Ugly way of piecing together a message, but there's no other way to do it
-        //Format: char returnCode, int length of expectedOutput, expectedOutput, 
-                //length of output, output
-        codeOutput.data = calloc(codeOutput.len, sizeof(char));
-        memcpy(codeOutput.data, &returnCode, sizeof(char));
-        memcpy(codeOutput.data + sizeof(char), &outputs[0].len, sizeof(int));
-        memcpy(codeOutput.data + sizeof(char) + sizeof(int), outputs[0].data, outputs[0].len);
-        memcpy(codeOutput.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
-        memcpy(codeOutput.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
-
-        return codeOutput;*/
-
     } else { // mcq questions
         outputs = malloc(2 * sizeof(struct FileData));
         //Get expected answer
@@ -122,6 +108,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
     struct FileData outputStr;
 
     if (lastAttempt == 1 && (is_correct == 0 || is_correct == 2)) {
+        printf("FORMULATING MESSAGE\n");
         outputStr.len = sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1;
         outputStr.data = calloc(outputStr.len, sizeof(char));
 
@@ -129,18 +116,17 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
         //Format: char returnCode, int length of expectedOutput, expectedOutput, 
                 //length of output, output
         memcpy(outputStr.data, &correct, sizeof(char));
-        memcpy(outputStr.data + sizeof(char), &outputs[0].len, sizeof(int));
+        memcpy((unsigned char *)outputStr.data + sizeof(char), &outputs[0].len, sizeof(int));
         memcpy((unsigned char *)outputStr.data + sizeof(char) + sizeof(int), outputs[0].data, outputs[0].len);
         memcpy((unsigned char *)outputStr.data + sizeof(char) + sizeof(int) + outputs[0].len, &outputs[1].len, sizeof(int));
         memcpy((unsigned char *)outputStr.data + sizeof(char) + 2 * sizeof(int) + outputs[0].len, outputs[1].data, outputs[1].len);
 
-        /*
         printf("\nSending long string:");
         for (int i = 0; i < outputStr.len; i++) {
-            printf("%c|", outputStr.data[i]);
+            printf("%c", outputStr.data[i]);
         }
         printf("\n");
-        */
+        
     } else {
         outputStr.len = sizeof(char);
         outputStr.data = malloc(sizeof(char));
