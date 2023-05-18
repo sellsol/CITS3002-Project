@@ -165,7 +165,7 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                     header = int.from_bytes(rawReceived[:4], byteorder = "little")
                     rawReceived = rawReceived[4:]
                     if is_image_output:
-                        sample_output = rawReceived[:header]
+                        student_output = rawReceived[:header]
                     else:
                         student_output = rawReceived[:header].decode('utf-8')
                     
