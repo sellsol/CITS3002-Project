@@ -82,14 +82,15 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 
 	if (pipe(thepipe) != 0) {
 		perror("pipe");
-		exit(EXIT_FAILURE);
+		*completed = 3;
+		return (struct FileData){0, NULL};
 	}
 
 	//Fork
 	switch (fork()) {
 		case -1:
 			perror("fork");
-			*completed = 2;
+			*completed = 3;
 			return (struct FileData){0, NULL};
 		case 0: //Child process - execl
 			close(thepipe[0]);
@@ -206,6 +207,15 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
     close(pFd);
 
     if (PROGRAM_MODE == C) {
+		//int thepipe[2];
+
+		/*
+		if (pipe(thepipe) != 0) {
+			perror("pipe");
+			*completed = 3;
+			return NULL;
+		}*/
+		
 	    //Get the executable path
 	    char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
 

@@ -121,7 +121,7 @@ struct FileData question_correct(uint64_t seed, char index,char lastAttempt,char
 
     struct FileData outputStr;
 
-    if (lastAttempt == 1 && is_correct == 0) {
+    if (lastAttempt == 1 && (is_correct == 0 || is_correct == 2)) {
         outputStr.len = sizeof(char) + 2 * sizeof(int) + outputs[0].len + outputs[1].len + 1;
         outputStr.data = calloc(outputStr.len, sizeof(char));
 
