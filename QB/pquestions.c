@@ -286,7 +286,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				int i = 1;
 				if (PROGRAM_MODE == PYTHON) {
 					inArgs[0] = "/usr/bin/python3";
-					inArgs[1] = "./code";
+					inArgs[1] = "./code.py";
 					i = 2;
 				} else {
 					inArgs[0] = "code";
