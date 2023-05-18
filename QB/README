@@ -1,1 +1,11 @@
-#TO-DO: Instruction on how to run QB
+To run QB after make:
+
+In this directory, run 
+
+'./QB -c -i <ip address for TM socket server> -o <port number for TM socket server>' 
+
+for a QB dealing with C, or run 
+
+'./QB -p -i <ip address for TM socket server> -o <port number for TM socket server>' 
+
+for a QB dealing with Python. 

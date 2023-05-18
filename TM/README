@@ -1,1 +1,7 @@
-#TO-DO: Instruction on how to run TM
+To run TM after make:
+
+In this directory, run 
+
+'python3 TM.py'
+
+Before that in the file config.py, adjust the host and port names for the HTTP server and sockets server to use your device's IP address. 
