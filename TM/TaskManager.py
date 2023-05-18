@@ -4,6 +4,7 @@ import selectors
 import types
 from queue import Queue
 from config import *
+import base64
 
 sel = selectors.DefaultSelector()
 data_to_send = Queue()
@@ -144,8 +145,9 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                 
                 # deserialise reply
                 rawReceived = data_received.get()[1]
+                success_type = rawReceived.decode('utf-8')[0]
+                is_correct = success_type == "t" # Sends the character
                 
-                is_correct = rawReceived.decode('utf-8')[0] == 't'
 
                 if is_last_attempt and not is_correct:
                     rawReceived = rawReceived[1:]
@@ -162,10 +164,13 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                     student_output = rawReceived[:header].decode('utf-8')
                     
                     #print("\tis_correct = " + str(is_correct) + ", sample output = " + sample_output + ", student output = " + student_output)
-                    return is_correct, sample_output, student_output
+                    return success_type, sample_output, student_output
+                
+                    # IMAGE TESTING
+                    return "i", read_file("example.png"), read_file("example.gif")
                 else:
                     #print("\tis_correct = " + str(is_correct))
-                    return is_correct, None, None
+                    return success_type, "", ""
             
                 """
                 if not is_correct and is_last_attempt:
@@ -189,6 +194,12 @@ def CheckAnswerRequest(qb_index, seedIndex, seed, is_last_attempt, student_answe
                     return is_correct
                 """
             
+            
+def read_file(file_path):
+    with open(file_path, "rb") as image_file:
+        byte_data = image_file.read()
+        return byte_data
+
 def test_ready():
     qbs_ready = 0
     for qb in list(qbs.queue):
