@@ -104,20 +104,6 @@ def ServiceConnection(key, mask):
             print(f"Sending data to {data.addr}")
             sock.sendall(data.outb)
            
-# FOR TESTING PURPOSES 
-# sends a text message to a qb, waits for a reply and returns it
-def SendMessage(qb_index, data):
-    addr = list(qbs.queue)[qb_index]
-    data_to_send.put((addr, struct.pack("i", len(data)) + bytes(data, "utf-8"))) #Just sends length of data then data    
-    
-    # wait for a reply to appear in the queue
-    while True:
-        for recv_data in list(data_received.queue):
-            if recv_data[0] == addr:
-                print(f"Received data from {addr}")
-                return data_received.get()[1].decode('utf-8')
-  
-
 # serialises and sends a question request to a qb,
 # waits for a reply and returns it deserialised
 def GenQuestionsRequest(qb_index, numQuestions, seed):
@@ -134,7 +120,6 @@ def GenQuestionsRequest(qb_index, numQuestions, seed):
                 rawReceived = data_received.get()[1] 
 
                 received = rawReceived.decode('utf-8').split("\;")
-                #print(received)
                                 
                 questions = received[:numQuestions]
                 types = received[numQuestions : 2 * numQuestions]

@@ -129,7 +129,7 @@ char* get_questions(uint64_t seed, char num){
             ques = line;
         }
         
-        //adding substrings to respective strings
+        //adding question info to relevant strings, adding separators
         if(type == 'c'){
             strncat(ques_type_ans[0],ques,strlen(ques)-1);//removing trailing \n for coding ques
         } else {
@@ -145,18 +145,8 @@ char* get_questions(uint64_t seed, char num){
         strncat(ques_type_ans[1], &type,1);
         strncat(ques_type_ans[1], q_sep, strlen(q_sep));
 
-        //adding seperators
-
-        // if(i!=num-1){ //last entry does not have question seperator
-
         ++i;
     }
-
-    //strncat(ques_type_ans[1],q_sep,strlen(q_sep));
-
-    // printf("%s\n",ques_type_ans[1]);
-    // printf("%s\n",ques_type_ans[0]);
-    // printf("%s\n",ques_type_ans[2]);
 
     /*
     * Serialising
@@ -171,70 +161,5 @@ char* get_questions(uint64_t seed, char num){
     free(ques_type_ans[1]);
     free(ques_type_ans[2]);
 
-    /*
-    int length = strlen(sending_txt);
-    int digits = floor(log10(length)+1)+1;
-    char length_str[digits];
-    sprintf(length_str,"%d",length);
-    // printf("%s\n",length_str);
-
-    sep = "\\;";
-    sending_str = (char*)realloc(sending_str,length+digits+strlen(sep)+(BUFSIZ/2));
-    strncat(sending_str,length_str,digits);
-    strncat(sending_str,sep,strlen(sep));
-    strncat(sending_str,sending_txt,length);*/
-
     return sending_txt;
 }
-
-// int main(int num,int64_t seed){
-//     num = 10;
-//     seed = 12;
-    
-//     int ques = get_questions(seed,num);
-//     // printf("Questions:\n%s\n",ques_types_ans[0]);
-//     // printf("Types:\n%s\n",ques_types_ans[1]);
-//     // printf("Answers:\n%s\n",ques_types_ans[2]);
-
-//     char *sending_txt = malloc(strlen(ques_types_ans[0])+strlen(ques_types_ans[1])+strlen(ques_types_ans[2]));
-//     memcpy(sending_txt,ques_types_ans[0],strlen(ques_types_ans[0]));
-//     memcpy(sending_txt+strlen(ques_types_ans[0]),ques_types_ans[1],strlen(ques_types_ans[1]));
-//     memcpy(sending_txt+strlen(ques_types_ans[0])+strlen(ques_types_ans[1]),ques_types_ans[2],strlen(ques_types_ans[2]));
-
-//     // strncat(sending_txt,ques_types_ans[0],strlen(ques_types_ans[0]));
-//     // strncat(sending_txt,ques_types_ans[1],strlen(ques_types_ans[1]));
-//     // strncat(sending_txt,ques_types_ans[2],strlen(ques_types_ans[2]));
-//     //printf("\nSending text:\n%s\n",sending_txt);
-
-//     /*
-//     * serialising
-//     */
-//     int length = strlen(sending_txt);
-//     int digits = floor(log10(length)+1)+1;
-//     char length_str[digits];
-//     sprintf(length_str,"%d",length);
-//     // printf("%s\n",length_str);
-
-//     char *sep = "\\;";
-//     char sending_str[length+digits+strlen(sep)+(BUFSIZ/2)];
-//     strncat(sending_str,length_str,digits);
-//     strncat(sending_str,sep,strlen(sep));
-//     strncat(sending_str,sending_txt,length);
-//     printf("\nSending string:\n%s\n",sending_str);
-
-//     //do something with sending str
-//     return 0;
-// }
-
-/*
-char* genQuestionsReply(int numQuestions, int seed) {
-    int ques = get_questions(seed, numQuestions);
-
-    char *sending_txt = malloc(BUFSIZ);
-    sprintf(sending_txt, "%s%s%s", ques_types_ans[0], ques_types_ans[1], ques_types_ans[2]);
-
-    free(ques_types_ans);
-
-    return sending_txt;
-}
-*/
