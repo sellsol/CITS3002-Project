@@ -43,9 +43,11 @@ int sendAll(int s, char *buf, int len) {
 char* recvAll(int s) {
 	int len; //Header describing the length of the message
 	int ret = recv(s, &len, sizeof(len), 0); //Get length of message
-	if (ret == -1) {
+	if (ret == 0) {
+		printf("WE DETECTED A DISCONNECT\n");
 		return NULL;
 	}
+	printf("WE DETECTED NOT AN ERROR: %i\n", ret);
 	char *msg = calloc(len, sizeof(char)); //Error handle here
 	//len = ntohl(len); Don't know what beej was thinking, this shit just breaks everything
 	
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
 	while (len != -1) {
 		msg = recvAll(sockfd);
 
-		if (strlen(msg) == 0) { // Connection closed
+		if (msg == NULL) { // Connection closed
 			printf("Connection to server lost\n");
 			printf("Exiting program, rerun to reconnect\n");
 			close(sockfd);
