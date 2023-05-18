@@ -1,8 +1,9 @@
 import sys
 from threading import Thread
 from config import *
-from MyServer import *
-from TaskManager import *
+from my_http_server import *
+from my_socket_server import *
+from operations import *
 
 if __name__ == "__main__":
     # thread that currently runs the socket server

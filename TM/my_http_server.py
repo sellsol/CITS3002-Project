@@ -3,8 +3,7 @@ from http.cookies import SimpleCookie
 from urllib.parse import unquote
 import json
 from config import *
-from authentication import *
-from datastructs import *
+from operations import *
 import base64
 
 class MyServer(BaseHTTPRequestHandler):            

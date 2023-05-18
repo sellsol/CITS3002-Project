@@ -1,4 +1,0 @@
-hey guess what, if you don't include something in a folder, git won't upload it
-which is really funny if you want a temporary folder to store executing code in
-
-so here this is

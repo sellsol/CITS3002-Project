@@ -4,7 +4,6 @@ import selectors
 import types
 from queue import Queue
 from config import *
-import base64
 
 sel = selectors.DefaultSelector()
 data_to_send = Queue()
