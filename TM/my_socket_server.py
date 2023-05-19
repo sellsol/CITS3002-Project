@@ -19,13 +19,14 @@ def StartServer(stop):
     s.bind((HOST, PORT))
     s.listen()
     print(f"Listening on host {HOST}, port {PORT}")
-    s.setblocking(False) #needed or not? We have threads
+    #s.setblocking(False) #needed or not? We have threads
     sel.register(s, selectors.EVENT_READ, data=None)
     
     # continuously check for events with the sockets
     while True:
         events = sel.select(timeout = 0.1) #will we need to deal with timeout later on
         for key, mask in events:
+            #print(key.data)
             if key.data is None:
                 AcceptConnection(s)
             else:
@@ -59,7 +60,7 @@ def AcceptConnection(s):
         qbs.put(addr)
         print(f"Connected to {addr}")
 
-    conn.setblocking(False)
+    #conn.setblocking(False)
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
     sel.register(conn, events, data)

@@ -43,8 +43,8 @@ int sendAll(int s, char *buf, int len) {
 char* recvAll(int s) {
 	int len; //Header describing the length of the message
 	int ret = recv(s, &len, sizeof(len), 0); //Get length of message
-	if (ret == 0) {
-		printf("WE DETECTED A DISCONNECT\n");
+	if (ret < 1) {
+		printf("WE DETECTED A DISCONNECT/ERROR\n");
 		return NULL;
 	}
 	printf("WE DETECTED NOT AN ERROR: %i\n", ret);
