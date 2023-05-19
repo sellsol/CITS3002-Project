@@ -5,6 +5,6 @@ TMDATABASE = TM_database.txt
 build:
 	
 # nothing to do for python in build
+#	rm -rf __pycache__
 clean:
-	rm -rf __pycache__
 	truncate -s 0 $(TMDATABASE)

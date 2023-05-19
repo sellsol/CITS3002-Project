@@ -4,7 +4,7 @@ C11 = cc
 QB: QB.c pquestions.o questions.o mark.o mode.h questions.h pquestions.h
 	$(C11) QB.c -o QB pquestions.o questions.o mark.o
 
-pquestions.o : pquestions.c mode.h
+pquestions.o : pquestions.c mode.h 
 	$(C11) -c pquestions.c
 
 questions.o : questions.c questions.h

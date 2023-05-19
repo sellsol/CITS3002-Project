@@ -45,8 +45,12 @@ int compileUnlink_cb(const char *fpath, const struct stat *sb, int typeflag, str
 
 	return rv;
 }
+
 //Reads text file to string and returns pointer to string. Pointer must be freed after use.
 struct FileData readFile(char *path) {
+	if (access(path, F_OK) != 0) {
+		return (struct FileData){0, NULL};
+	}
 	//Stat to get file size
 	struct stat *buf = malloc(sizeof(struct stat));
 	stat(path, buf); //Need to error handle
@@ -95,6 +99,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 		case 0: //Child process - execl
 			close(thepipe[0]);
 			dup2(thepipe[1], 1);
+			dup2(thepipe[1], 2);
 
 			close(thepipe[1]);
 
@@ -112,7 +117,7 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 
 			//Initialise variables
 			struct FileData output;
-			output.data = malloc(MAX_OUTPUT_LEN);
+			output.data = calloc(MAX_OUTPUT_LEN, sizeof(char));
 
 			//Read from the pipe until we are finished or we have read more data than we were expecting
 			int pos = 0;
@@ -121,26 +126,23 @@ struct FileData testCode(char *completed, char lastAttempt, char *in[], char *ex
 				pos += got;
 				got = read(thepipe[0], output.data + pos, MAX_OUTPUT_LEN - pos);
 			}
-			output.data[pos] = '\0';
+			output.data[MAX_OUTPUT_LEN - 1] = '\0';
 
-			wait(NULL); //Should we have some kind of timeout value? Possibly
+			wait(NULL);
 			close(thepipe[0]);
 
 			//If this is an image, we check it like so
 			if (expectedImage.data != NULL) {
-				if (access("./image.png", F_OK) != 0) {
-					return (struct FileData){0, NULL};
-				}
-
 				struct FileData outputImage = readFile("./image.png");
 
 				//If not the same length, return
 				if (expectedImage.len != outputImage.len) {
-					*completed = 0;
 					if (lastAttempt == 1) {
 						*completed = 2;
 						return outputImage;
 					}
+					*completed = 0;
+					return (struct FileData){0, NULL};
 				}
 
 				//Compare images. Cannot use strcmp due to null characters present
@@ -214,14 +216,13 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
     close(pFd);
 
     if (PROGRAM_MODE == C) {
-		//int thepipe[2];
+		int thepipe[2];
 
-		/*
 		if (pipe(thepipe) != 0) {
 			perror("pipe");
 			*completed = 3;
 			return NULL;
-		}*/
+		}
 		
 	    //Get the executable path
 	    char *execPath = strndup(codePath, strlen("./code/XXXXXX/code"));
@@ -233,11 +234,43 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				*completed = 3;
 				return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
             case 0: //Child process - execv
+				close(thepipe[0]);
+				dup2(thepipe[1], 2);
+
+				close(thepipe[1]);
+
 			    execl("/usr/bin/gcc", "gcc", codePath, "-o", execPath, (char *) NULL);
 			    perror("/usr/bin/gcc");
 			    exit(EXIT_FAILURE); //Definitely need to report any compile errors
             default:
-                wait(NULL);
+                close(thepipe[1]); //Will never write
+
+				//Initialise variables
+				struct FileData output;
+				output.data = calloc(MAX_OUTPUT_LEN, sizeof(char));
+
+				//Read from the pipe until we are finished or we have read more data than we were expecting
+				int pos = 0;
+				int got = read(thepipe[0], output.data, MAX_OUTPUT_LEN);
+				while (got != 0 || pos == MAX_OUTPUT_LEN) {
+					pos += got;
+					got = read(thepipe[0], output.data + pos, MAX_OUTPUT_LEN - pos);
+				}
+				output.data[MAX_OUTPUT_LEN - 1] = '\0';
+
+				wait(NULL);
+				close(thepipe[0]);
+				printf("%s\n", output.data);
+
+				//Process data
+				if (pos != 0) {
+					printf("FAILED TO COMPILE\n");
+					*completed = 0;
+					if (lastAttempt == 1) {
+						return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){pos, output.data}};
+					}
+					return NULL;
+				}
         }
 		unlink(codePath);
         free(codePath);
@@ -262,20 +295,10 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 			char *inPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/in"), sizeof(char));
 			char *outPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/out"), sizeof(char));
 			char *pngPath = calloc(strlen(questionPath) + strlen(dir->d_name) + strlen("/png"), sizeof(char));
-			//optimise
 
-			//string concatenate path names		Better to use snprintf?
-			strcat(inPath, questionPath);
-			strcat(inPath, dir->d_name);
-			strcat(inPath, "/in");
-
-			strcat(outPath, questionPath);
-			strcat(outPath, dir->d_name);
-			strcat(outPath, "/out");
-
-			strcat(pngPath, questionPath);
-			strcat(pngPath, dir->d_name);
-			strcat(pngPath, "/png");
+			sprintf(inPath, "%s%s%s", questionPath, dir->d_name, "/in");
+			sprintf(outPath, "%s%s%s", questionPath, dir->d_name, "/out");
+			sprintf(pngPath, "%s%s%s", questionPath, dir->d_name, "/png");
 
 			//Get input file if it exists
 			char **inArgs = NULL;
@@ -329,15 +352,8 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				inArgs[2] = NULL;
 			}
 
-			struct FileData png = {0, NULL};
-			if (access(pngPath, F_OK) == 0) {
-				png = readFile(pngPath);
-			}
-
-			struct FileData out = {0, NULL};
-			if (access(outPath, F_OK) == 0) {
-				out = readFile(outPath);
-			}
+			struct FileData png = readFile(pngPath);	
+			struct FileData out = readFile(outPath);
 				
 			//Free paths
 			free(inPath);
@@ -362,6 +378,7 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				*completed = ret;
 				closedir(d);
 				unlink(codePath);
+				free(codePath);
 				nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 				if (lastAttempt == 1) {
 					printf("RETURNING LAST ATTEMPT %i\n", ret);
@@ -379,14 +396,15 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				free(png.data);
 				return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 			}
-			free(png.data);
 			free(out.data);
+			free(png.data);
 		}
 
-		*completed = 1;
+		*completed = 1; //Set completed to true
 
 		closedir(d);
 		unlink(codePath);
+		free(codePath);
 		nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 		return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){0, NULL}};
 }
