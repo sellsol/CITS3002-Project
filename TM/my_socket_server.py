@@ -73,17 +73,21 @@ def ServiceConnection(key, mask):
     if mask & selectors.EVENT_READ:
         # something came in from socket
         recv_data = sock.recv(1024)
-        got = 1024
+
         length_header = int.from_bytes(recv_data[:4], byteorder = "little")
+        print(length_header)
         recv_data = recv_data[4:]
+        got = len(recv_data)
         while got < length_header:
-            recv_data += sock.recv(1024)
-            got += 1024
-        
+            d = sock.recv(1024)
+            got += len(d)
+            recv_data += d
+        print(recv_data)
         if recv_data:
             # data received from the socket
             data_received.put((data.addr, recv_data))
         else: 
+            print(recv_data)
             # socket has closed the connection/ connection lost
             print(f"Closing connection to {data.addr}")
             sel.unregister(sock)

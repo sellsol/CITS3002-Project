@@ -49,6 +49,7 @@ char* recvAll(int s) {
 		return NULL;
 	} else if (ret == 0) {
 		printf("WE DETECTED A DISCONNECT %i\n", ret);
+		return NULL;
 	}
 	printf("WE DETECTED NOT AN ERROR: %i\n", ret);
 	char *msg = calloc(len, sizeof(char)); //Error handle here
