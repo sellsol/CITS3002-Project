@@ -8,4 +8,4 @@
 8,c,Write a program in c to count and print the length of all it's arguments
 9,m,The memory allocation for arrays in c is dynamically allocated.,True\,False
 10,m,What does fopen() function return in c?.,a file pointer\,an integer file descriptor\,a string of data
-11,c,Write a program to reverse a given integer list.
+11,c,Write a program to print in reverse all the inputs.

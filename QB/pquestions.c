@@ -260,11 +260,14 @@ struct FileData* compileCode(char* completed, char* question, char* code, char l
 				wait(NULL);
 				close(thepipe[0]);
 				printf("%s\n", output.data);
+				free(output.data);
 
 				//Process data
 				if (pos != 0) {
 					printf("FAILED TO COMPILE\n");
 					*completed = 1;
+					nftw(dirPath, compileUnlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+					free(dirPath);
 					if (lastAttempt == 1) {
 						return (struct FileData []){(struct FileData){0, NULL}, (struct FileData){pos, output.data}};
 					}
