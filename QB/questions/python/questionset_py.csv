@@ -1,4 +1,4 @@
-1,c,Write a function that outputs an 255 x 255 pure green image.png file. You can use python png library
+1,c,Write a function that outputs an 255 x 255 pure green image.png file. You can not use python png library
 2,m,Which function data type is immutable?,set\,list\,tuple\,dictionary
 3,m,What does type(1) return?,int\,float\,double\,char
 4,m,Does python use a compiler to run programs?,True\,False
