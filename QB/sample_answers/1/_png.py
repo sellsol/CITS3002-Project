@@ -1,6 +1,8 @@
 import struct
 import zlib
 
+# Inspired by PyPNG - https://gitlab.com/drj11/pypng/-/blob/main/code/png.py
+
 # The PNG signature
 signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
