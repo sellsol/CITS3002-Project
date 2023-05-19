@@ -43,9 +43,12 @@ int sendAll(int s, char *buf, int len) {
 char* recvAll(int s) {
 	int len; //Header describing the length of the message
 	int ret = recv(s, &len, sizeof(len), 0); //Get length of message
-	if (ret < 1) {
-		printf("WE DETECTED A DISCONNECT/ERROR\n");
+	if (ret == -1) {
+		perror("recv");
+		printf("WE DETECTED A ERROR %i\n", ret);
 		return NULL;
+	} else if (ret == 0) {
+		printf("WE DETECTED A DISCONNECT %i\n", ret);
 	}
 	printf("WE DETECTED NOT AN ERROR: %i\n", ret);
 	char *msg = calloc(len, sizeof(char)); //Error handle here
