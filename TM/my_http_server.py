@@ -102,27 +102,31 @@ class MyServer(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(response).encode("utf-8"))
             print("\tStudent's questions loaded")
         elif self.path == "/submit-answer":
-            content_length = int(self.headers["Content-Length"])
-            body = self.rfile.read(content_length)
-            data = body.decode("utf-8")
-            username, answer, pos, attempts = data.split(":")
-            answer = unquote(answer)
-            is_last_attempt = int(attempts) == 2
-            
-            print("\tSubmitting answer from: " + username, ", Question index: " + pos)
-            print("\tAnswer: " + answer)
-            self.send_response(200)
-            self.end_headers()                
-            correct, is_image_output, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
-            if (is_image_output):
-                response = {"success": True, "image": True, "correct": False, 
-                            "student_output": base64.b64encode(student_output).decode("utf-8"), 
-                            "sample_output": base64.b64encode(sample_output).decode("utf-8")}
+            if (not test_ready()):
+                self.send_response(503)
+                self.end_headers()
             else:
-                response = {"success": True, "image": False, "correct": correct, 
-                            "student_output": student_output, 
-                            "sample_output": sample_output}
-            self.wfile.write(json.dumps(response).encode("utf-8"))
+                content_length = int(self.headers["Content-Length"])
+                body = self.rfile.read(content_length)
+                data = body.decode("utf-8")
+                username, answer, pos, attempts = data.split(":")
+                answer = unquote(answer)
+                is_last_attempt = int(attempts) == 2
+                
+                print("\tSubmitting answer from: " + username, ", Question index: " + pos)
+                print("\tAnswer: " + answer)
+                self.send_response(200)
+                self.end_headers()                
+                correct, is_image_output, sample_output, student_output = check_answer(username, int(pos), answer, is_last_attempt)
+                if (is_image_output):
+                    response = {"success": True, "image": True, "correct": False, 
+                                "student_output": base64.b64encode(student_output).decode("utf-8"), 
+                                "sample_output": base64.b64encode(sample_output).decode("utf-8")}
+                else:
+                    response = {"success": True, "image": False, "correct": correct, 
+                                "student_output": student_output, 
+                                "sample_output": sample_output}
+                self.wfile.write(json.dumps(response).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()

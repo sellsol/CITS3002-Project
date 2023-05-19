@@ -43,14 +43,16 @@ def AcceptConnection(s):
     conn, addr = s.accept()
     
     global waiting_reconnect
+    already_connected = False
     if waiting_reconnect:
         for qb in list(qbs.queue):
-            if qb == None:
+            if qb == None and not already_connected:
                 qbs.get()
                 qbs.put(addr)
                 print(f"Connected to {addr}")
                 if None not in list(qbs.queue):
                     waiting_reconnect = False
+                already_connected = True
             else:
                 qbs.get()
                 qbs.put(qb)
