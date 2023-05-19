@@ -54,7 +54,7 @@ img = []
 for y in range(height):
     row = ()
     for x in range(width):
-        row = row + (255, 255, 0)
+        row = row + (0, 255, 0)
     img.append(row)
 with open('image.png', 'wb') as f:
     w = Writer(width, height)

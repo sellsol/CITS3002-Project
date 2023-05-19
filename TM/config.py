@@ -8,9 +8,9 @@ loginFile = "login_file.txt"
 DB_filepath = "TM_database.txt"
 
 # HTTP server address
-hostName = "172.20.10.7"
+hostName = "localhost"
 serverPort = 8000
 
 # sockets server address
-HOST = "172.20.10.7"
+HOST = "127.0.0.1"
 PORT = 65432

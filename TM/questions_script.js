@@ -70,7 +70,7 @@ function submitAnswer() {
   }
   var answer;
   if (types[currentQuestion] == "c") {
-    answer = document.getElementById("answer").value;
+    answer = document.getElementById("answer").value + "\n";
   } else if (types[currentQuestion] == "m") {
     event.preventDefault();
     answer = document.querySelector('input[name="mcq"]:checked').value;
